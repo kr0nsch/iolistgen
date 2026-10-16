@@ -1,0 +1,19 @@
+# Плагин iolistgen для MasterSCADA 4D — заготовка (README.md). Подключение к установленному iolistgen:
+#   pipx inject iolistgen ./plugins/iolistgen-masterscada4d
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "iolistgen-masterscada4d"
+version = "0.0.1"
+description = "Заготовка генератора iolistgen для MasterSCADA 4D: формат импорта вендора не задокументирован"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = ["iolistgen>=0.1"]
+
+[project.entry-points."iolistgen.generators"]
+masterscada4d = "iolistgen_masterscada4d:MasterScada4dGenerator"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["iolistgen_masterscada4d.py"]
