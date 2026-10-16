@@ -1,0 +1,29 @@
+{{ header }}
+{% for line in intro %}
+{{ line }}
+{% endfor %}
+{% if alarm_sink %}
+
+// Приёмник событий тревог библиотеки: присваивается каждый цикл до вызова устройств (контракт 5.3)
+{{ alarm_sink }}
+{% endif %}
+{% if apply_command %}
+
+// Команда HMI «Применить уставки проекта» (контракт 18.3, правило 2): Retain устройств не меняется
+IF GVL_Hmi.xApplyProjectCfg THEN
+    GVL_Hmi.xApplyProjectCfg := FALSE;
+    PRG_ApplyProjectCfg();
+END_IF
+{% endif %}
+{% for device in devices %}
+
+{% for line in device.title %}
+{{ line }}
+{% endfor %}
+{% for line in device.call %}
+{{ line }}
+{% endfor %}
+{% for line in device.outputs %}
+{{ line }}
+{% endfor %}
+{% endfor %}

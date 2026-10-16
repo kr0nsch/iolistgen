@@ -1,0 +1,16 @@
+{{ header }}
+{% for line in purpose %}
+{{ line }}
+{% endfor %}
+{attribute 'qualified_only'}
+VAR_GLOBAL CONSTANT
+{% for device in devices %}
+{% for line in device.title %}
+{{ line }}
+{% endfor %}
+    // lint:allow STL007 структура-константа: имя как у GVL_Persist.{{ device.cfg }} (контракт 18.3, правило 2)
+{% for line in device.lines %}
+{{ line }}
+{% endfor %}
+{% endfor %}
+END_VAR

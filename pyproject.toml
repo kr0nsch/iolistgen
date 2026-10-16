@@ -1,19 +1,85 @@
-# Настройки Python-инструментов шаблона (tools/): ruff, mypy, pytest.
+# Пакет iolistgen (проверка перечня сигналов и генерация кода ПЛК) и настройки Python-инструментов
+# репозитория: ruff, mypy, pytest — для пакета (iolistgen/, pytests/), скриптов примеров (examples/)
+# и инструментов шаблона (tools/).
 # tools/codesys/*.py выполняются и в IronPython 2.7 (CODESYS Scripting): для них отключены
 # правила, которые предлагают синтаксис Python 3 (pyupgrade и др.).
 
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
 [project]
-name = "plc-repo-template-tools"
+name = "iolistgen"
 version = "0.1.0"
-description = "Инструменты шаблона ПЛК-репозитория: раскладка ST, сборка, линтер, проверки"
-requires-python = ">=3.11"
+description = "Проверка перечня сигналов АСУ ТП (CSV, XLSX) и генерация кода ПЛК CODESYS, карт Modbus и документации"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "<ИМЯ ФАМИЛИЯ>" }]
+requires-python = ">=3.10"
+keywords = ["plc", "codesys", "iec-61131-3", "io-list", "modbus", "scada", "code-generator"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Manufacturing",
+    "Natural Language :: Russian",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Code Generators",
+    "Typing :: Typed",
+]
+dependencies = [
+    "pydantic>=2.6,<3",
+    "openpyxl>=3.1",
+    "jinja2>=3.1",
+    "tomli>=2.0; python_version < '3.11'",
+]
+
+[project.urls]
+Repository = "https://github.com/<GITHUB_USER>/iolistgen"
+Documentation = "https://github.com/<GITHUB_USER>/iolistgen/blob/main/docs/schema.md"
+
+[project.scripts]
+iolistgen = "iolistgen.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["iolistgen"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/iolistgen",
+    "/pytests",
+    "/examples",
+    "/docs/schema.md",
+    "/docs/CLI.md",
+    "/docs/PLUGINS.md",
+    "/docs/GENERATORS.md",
+    "/tests_support",
+    "/docs/io_list_broken.validation.md",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/LICENSE",
+]
 
 [tool.ruff]
 line-length = 120
 target-version = "py311"
 extend-exclude = ["build"]
-# Каталоги модулей проекта (для сортировки импортов: first-party)
-src = ["tools", "tools/codesys", "tools/check", "tools/tests"]
+# Каталоги модулей (для сортировки импортов: first-party)
+src = [".", "pytests", "tools", "tools/codesys", "tools/check", "tools/tests", "examples", "examples/synthetic",
+       "plugins/iolistgen-masterscada4d"]
+
+[tool.ruff.per-file-target-version]
+# Пакет поддерживает Python 3.10: ruff не предлагает синтаксис 3.11+
+"iolistgen/**/*.py" = "py310"
+"pytests/**/*.py" = "py310"
+"examples/**/*.py" = "py310"
+"tests_support/**/*.py" = "py310"
+"plugins/**/*.py" = "py310"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "SIM", "C4", "RUF"]
@@ -35,8 +101,8 @@ exclude = ["tools/codesys/*.py"]
 
 [tool.mypy]
 python_version = "3.11"
-files = ["tools"]
-mypy_path = ["tools", "tools/codesys", "tools/check"]
+files = ["iolistgen", "pytests", "tools", "examples", "tests_support", "plugins/iolistgen-masterscada4d"]
+mypy_path = ["tools", "tools/codesys", "tools/check", "examples", "examples/synthetic", "plugins/iolistgen-masterscada4d"]
 strict = true
 warn_unreachable = true
 # Скрипты CODESYS (IronPython 2.7) используют глобальные объекты среды CODESYS (projects,
@@ -45,11 +111,18 @@ exclude = [
     '^tools/codesys/(?!stlayout\.py$)[^/]*\.py$',
     '^tools/tests/fixtures/',
 ]
+plugins = ["pydantic.mypy"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
 
 [tool.pytest.ini_options]
-testpaths = ["tools/tests"]
-pythonpath = ["tools", "tools/codesys", "tools/check"]
+testpaths = ["pytests", "tools/tests"]
+pythonpath = [".", "tools", "tools/codesys", "tools/check", "examples", "examples/synthetic", "plugins/iolistgen-masterscada4d"]
 addopts = "-ra --strict-markers"
 markers = [
     "integration: проверки с настоящими plc (RuSTy) и iec_checker; пропускаются, если инструмента нет",
+    "golden: эталонные файлы генераторов (обновление — переменная IOLISTGEN_UPDATE_GOLDEN=1)",
 ]

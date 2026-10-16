@@ -1,5 +1,15 @@
-# Зависимости для разработки и CI (Python 3.11+): python -m pip install -r requirements-dev.txt
+# Зависимости для разработки и CI (Python 3.10+): python -m pip install -r requirements-dev.txt
+# Инструменты проверки
 ruff==0.17.1
 mypy==2.4.0
 pytest==9.1.1
-hypothesis==6.170.0
+hypothesis==6.170.0; python_version >= "3.11"
+# последняя версия hypothesis с поддержкой Python 3.10 (задание CI package)
+hypothesis==6.168.5; python_version < "3.11"
+# Зависимости пакета iolistgen (pyproject.toml), закреплённые для воспроизводимого CI
+pydantic==2.14.1
+openpyxl==3.1.5
+Jinja2==3.1.6
+tomli==2.5.0; python_version < "3.11"
+# Типы для mypy
+types-openpyxl==3.1.5.20260827

@@ -1,0 +1,15 @@
+{{ header }}
+{% for line in purpose %}
+{{ line }}
+{% endfor %}
+VAR_GLOBAL PERSISTENT RETAIN
+{{ layout_version }}
+{% for device in devices %}
+{% for line in device.title %}
+{{ line }}
+{% endfor %}
+{% for line in device.lines %}
+{{ line }}
+{% endfor %}
+{% endfor %}
+END_VAR

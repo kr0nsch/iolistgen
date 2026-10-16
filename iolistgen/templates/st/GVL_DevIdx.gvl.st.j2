@@ -1,0 +1,10 @@
+{{ header }}
+{% for line in purpose %}
+{{ line }}
+{% endfor %}
+{attribute 'qualified_only'}
+VAR_GLOBAL CONSTANT
+{% for line in lines %}
+{{ line }}
+{% endfor %}
+END_VAR
