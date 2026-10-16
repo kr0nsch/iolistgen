@@ -1,0 +1,17 @@
+tag;description;signal_type;device;device_type;dev_no;role;range_min;range_max;units;sp_hh;sp_h;sp_l;sp_ll;alarm_priority;mb_link;mb_slave;mb_func;mb_reg;mb_type;mb_order;Примечание;params
+LT101;Уровень в резервуаре;AI;;AnalogInput;1;PV;5;0;м;;;;;High;;;;;;;шкала перепутана;
+LT102;Уровень в камере гашения;AI;;AnalogInput;2;PV;0;3;м;2,8;2,0;2,2;0,3;;;;;;;;;
+PT101;Давление в коллекторе;AI;;AnalogInput;3;PV;0;10;;;;;;;;;;;;;;
+LS101;Поплавок аварийного уровня;DI;;DigitalInput;4;IN;;;;;;;;High;;;;;;;;
+LS101;Поплавок сухого хода;DI;;DigitalInput;5;IN;;;;;;;;High;;;;;;;дубль тега;
+Р101_RUN;Насос Н1: работа;DO;P101;MotorVfd;11;CMD_RUN;;;;;;;;;;;;;;;кириллица в теге;tMinStopp=T#30S
+P101_STW;Насос Н1: слово состояния ПЧ;MB;P101;;;VFD_STW;;;;;;;;;RS485-1;1;3;5;WORD;;;
+P101_ACT;Насос Н1: частота;MB;P101;;;SPEED_ACT;0;50;Гц;;;;;;RS485-1;1;3;4;REAL;;;
+P101_REF;Насос Н1: задание частоты;MB;P101;;;SPEED_REF;0;50;Гц;;;;;;RS485-1;1;3;1;INT;;;
+P102_RUN;Насос Н2: работа;DO;P102;MotorVfd;12;CMD_RUN;;;;;;;;;;;;;;;;
+P102_FB;Насос Н2: в работе;AI;P102;;;RUN_FB;;;;;;;;;;;;;;;;
+P102_STW;Насос Н2: слово состояния ПЧ;MB;P102;;;VFD_STW;;;;;;;;;RS485-1;2;3;3;WORD;;;
+P102_ACT;Насос Н2: частота;MB;P102;;;SPEED_ACT;0;50;Гц;;;;;;RS485-1;2;3;4;INT;;;
+M201_RUN;Мешалка: работа;DO;M201;Pump;21;CMD_RUN;;;;;;;;;;;;;;;;
+lt-103;Уровень в дренажном приямке;AI;;AnalogInput;6;PV;0;2;м;;;;;;;;;;;;;
+FCV101;Регулирующий клапан;AO;;ControlValve;31;POS_OUT;0;100;;;;;;;;;;;;;;

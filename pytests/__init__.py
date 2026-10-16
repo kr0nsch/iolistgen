@@ -1,0 +1,1 @@
+"""Тесты пакета iolistgen (pytest)."""
