@@ -1,4 +1,5 @@
-# CI шаблона ПЛК-репозитория: проверки, которым не нужен CODESYS.
+# CI iolistgen: пакет Python (ruff, mypy, pytest на нескольких версиях Python, сборка и установка
+# через pipx) и проверки ПЛК-раскладки шаблона, которым не нужен CODESYS.
 # Сборка и тесты в CODESYS выполняются на Windows вручную (docs/MANUAL_STEPS.md).
 name: CI
 
@@ -159,6 +160,66 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  package:
+    # Пакет iolistgen на поддерживаемых версиях Python: тесты, сборка wheel и sdist, установка
+    # собранного wheel в чистое окружение и запуск команды, установка через pipx.
+    name: iolistgen, Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Зависимости
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: pytest (пакет)
+        run: python -m pytest pytests
+
+      - name: Сборка wheel и sdist
+        run: |
+          python -m pip install build==1.6.1
+          python -m build
+
+      - name: Установка wheel и запуск iolistgen
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/python" -m pip install dist/*.whl
+          cd "$RUNNER_TEMP"
+          bin="$RUNNER_TEMP/venv/bin/iolistgen"
+          "$bin" --version
+          "$bin" validate "$GITHUB_WORKSPACE/pytests/data/kns_mini.csv" --no-config --report both --out reports
+          "$bin" generate "$GITHUB_WORKSPACE/pytests/data/kns_mini.csv" --no-config --out generated
+          "$bin" schema --output schema.md
+          test -s reports/kns_mini.validation.html
+          test -s generated/docs/signal_list.md
+          test -s generated/src/POUs/Generated/PRG_Devices/PRG_Devices.impl.st
+          test -s generated/src/GVLs/Generated/GVL_Persist.pvl.st
+          test -s generated/docs/modbus_map.md
+          test -s generated/scada/scada_tags.csv
+          # перечень с ошибками: код выхода 1
+          set +e
+          "$bin" validate "$GITHUB_WORKSPACE/pytests/data/kns_errors.csv" --no-config -q
+          code=$?
+          set -e
+          test "$code" -eq 1
+
+      - name: pipx install .
+        if: matrix.python == '3.12'
+        run: |
+          pipx install --python "$(command -v python)" .
+          iolistgen --version
+          pipx uninstall iolistgen
+
   iec_checker_nightly:
     # Необязательная сверка: новая версия разборщика может найти больше или иначе. Расхождения
     # с v0.4 переносятся в docs/STATIC_ANALYSIS.md (столбец «решение»), падение не блокирует слияние.
@@ -207,6 +268,7 @@ jobs:
   rusty:
     # Необязательная проверка: RuSTy понимает не все расширения CODESYS,
     # несовместимые файлы перечислены в tools/check/rusty_exclude.txt.
+    # Второй шаг — сгенерированный iolistgen ST по заглушке plc-process-lib (docs/GENERATORS.md).
     name: RuSTy plc --check (необязательно)
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -239,15 +301,30 @@ jobs:
         id: rusty
         run: python tools/check/run_rusty.py
 
+      - name: Зависимости iolistgen
+        if: ${{ !cancelled() }}
+        run: python -m pip install -r requirements-dev.txt
+
+      # st_lint, сборка раскладки и RuSTy по заглушке библиотеки: kns_mini.csv, gen_fixture.csv, КНС-1 и
+      # синтетический перечень из examples/;
+      # журналы — build/st_check/<случай>/rusty/
+      - name: RuSTy — сгенерированный ST (заглушка plc-process-lib)
+        id: rusty_generated
+        if: ${{ !cancelled() }}
+        run: python tests_support/check_generated_st.py
+
       - name: Сводка
         if: ${{ !cancelled() }}
         env:
           R_RUSTY: ${{ steps.rusty.outcome }}
+          R_RUSTY_GENERATED: ${{ steps.rusty_generated.outcome }}
         run: |
           {
             echo "## RuSTy $RUSTY_VERSION (необязательная проверка)"
             echo ""
             echo "Итог \`plc --check\`: ${R_RUSTY:-нет данных}"
+            echo ""
+            echo "Сгенерированный ST по заглушке plc-process-lib: ${R_RUSTY_GENERATED:-нет данных}"
             echo ""
             if [ -f build/rusty.log ]; then
               echo '```text'
