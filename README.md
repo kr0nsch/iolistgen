@@ -9,8 +9,10 @@
 ошибки неизбежны: дубли тегов, перепутанные шкалы, пересекающиеся адреса Modbus, насос без
 задания частоты. `iolistgen` проверяет перечень в Excel или CSV и в каждом сообщении называет
 строку, колонку, что не так и как исправить, а затем генерирует по перечню код ПЛК для
-библиотеки устройств plc-process-lib (CODESYS V3.5), карты обмена Modbus, импорт тегов SCADA и
-таблицы для документации.
+библиотеки устройств plc-process-lib 1.0.0 (CODESYS V3.5), карты обмена Modbus, импорт тегов SCADA
+и таблицы для документации. Код по перечню КНС-1 собран в CODESYS 3.5.17.30 с настоящей
+библиотекой: 0 ошибок, 0 предупреждений, Cfg всех устройств принимает `CheckConfig` библиотеки
+([«Сборка в CODESYS»](#сборка-в-codesys)).
 
 ## Демонстрация
 
@@ -24,18 +26,20 @@
 <p align="center"><sub>Отчёт <code>iolistgen validate --report html</code> по учебному перечню с ошибками <code>pytests/data/kns_errors.csv</code>, версия 0.1.0</sub></p>
 
 > _Плейсхолдер: GIF «перечень КНС-1 в Excel → `iolistgen validate` → `iolistgen generate` →
-> импорт в CODESYS скриптом шаблона и сборка» появится после первой сборки сгенерированного кода
-> с настоящей библиотекой plc-process-lib в CODESYS 3.5.17 (см. «Ограничения»)._
+> `cds.py build` в CODESYS 3.5.17» — записать по шагам [MANUAL_STEPS.md](docs/MANUAL_STEPS.md#9-код-сгенерированный-iolistgen-в-проекте-codesys)
+> (сборка проверена 19.10.2026, запись экрана ещё не сделана)._
 
 ## Как это работает
 
 ```mermaid
 flowchart LR
-    list["Перечень сигналов<br/>XLSX или CSV"] --> check["Валидация<br/>73 правила: теги, шкалы, уставки,<br/>роли устройств, Modbus, Cfg"]
+    list["Перечень сигналов<br/>XLSX или CSV"] --> check["Валидация<br/>74 правила: теги, шкалы, уставки,<br/>роли устройств, Modbus, Cfg"]
     cfg["iolistgen.toml<br/>правила имён, уровни"] --> check
     check -- "ошибки" --> report["Отчёт: строка, колонка,<br/>как исправить<br/>консоль, MD, HTML, JSON"]
     check -- "ошибок нет" --> gens["Генераторы<br/>встроенные и плагины"]
     gens --> st["Код ПЛК, ST<br/>GVL_IO, GVL_Devices,<br/>GVL_Persist, PRG_Devices"]
+    st --> cds["CODESYS 3.5.17<br/>plc-process-lib 1.0.0.0<br/>cds.py build, check, test"]
+    extra["persist_extra<br/>данные приложения"] --> gens
     gens --> maps["Карты Modbus<br/>master и slave<br/>CSV, Markdown"]
     gens --> scada["SCADA<br/>теги с путями и узлами OPC UA,<br/>тревоги"]
     gens --> docs["Документы<br/>перечень сигналов,<br/>список тревог"]
@@ -44,7 +48,9 @@ flowchart LR
 Схема перечня реализует контракт plc-process-lib (раздел 20): строка — сигнал, строки с одним
 `device` — один экземпляр ФБ, роль привязывает строку к входу или выходу ФБ, колонка `params`
 задаёт любое поле Cfg литералом ST. Сигналы без ФБ (лампа, сирена, регистр, который читает
-адаптер ПЧ, резервный канал) записываются с ролью `AUX`. Модули пакета и потоки данных —
+адаптер ПЧ, резервный канал) записываются с ролью `AUX`. ПИД-регулятор (тип `Pid`) сигналов
+ввода-вывода не имеет: в перечне это строка устройства без типа сигнала и роли, его вызов пишет
+логика станции. Модули пакета и потоки данных —
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#пакет-iolistgen).
 
 ## Быстрый старт
@@ -53,7 +59,7 @@ flowchart LR
 
 ```bash
 pipx install .                                     # команда iolistgen; для разработки: pip install -e .
-iolistgen validate examples/kns/io_list.csv        # КНС-1: 58 сигналов, 29 устройств — ошибок нет
+iolistgen validate examples/kns/io_list.csv        # КНС-1: 58 сигналов, 30 устройств — ошибок нет
 iolistgen validate examples/kns/io_list.xlsx       # тот же перечень в Excel
 iolistgen validate examples/broken/io_list_broken.csv --report html --out build   # 30 ошибок: код выхода 1
 iolistgen generate examples/kns/io_list.csv --out build/kns   # ST, карты, SCADA, тревоги, перечень
@@ -134,7 +140,7 @@ GVL_IO.rP101_SpeedRef_pct := GVL_Devices.fbP101.rSpeedRef_pct;
 
 ## Что проверяется
 
-73 правила, у каждого код, уровень и подсказка «как исправить»:
+74 правила, у каждого код, уровень и подсказка «как исправить»:
 
 - теги: идентификатор ST, дубли без учёта регистра после нормализации, кириллица вместо
   латиницы, правило именования из `iolistgen.toml` (по умолчанию — позиции в духе ГОСТ 21.208:
@@ -143,7 +149,8 @@ GVL_IO.rP101_SpeedRef_pct := GVL_Devices.fbP101.rSpeedRef_pct;
   шкалы, применимость задержек;
 - устройства: тип и роли по контракту библиотеки, обязательные сигналы (ПЧ без задания частоты
   — ошибка), формы управления арматурой, стабильные уникальные номера, ссылки `link_power` и
-  `link_fb`; строка насоса без `device` — подсказка, какое устройство указать;
+  `link_fb`; строка насоса без `device` — подсказка, какое устройство указать; у ПИД-регулятора —
+  одна строка устройства без сигнала, диапазон PV;
 - Modbus: пересечения адресов с учётом длины типа и битов внутри «линия, слейв, пространство»,
   функция и направление роли, тип данных и функция, бит регистра, порядок слов, адрес слейва
   (0 — отдельное правило, ослабляется для Modbus TCP), имена линий;
@@ -168,7 +175,7 @@ Excel читается так, как его видит человек: объе
 | `st-codesys` | ST для CODESYS 3.5: `GVL_IO` (каналы, Modbus, адаптеры ПЧ, сигналы AUX), `GVL_DevIdx`, `GVL_Hmi` (команды), `GVL_Persist` (Persistent Variables: Cfg с уставками перечня и Retain), `GVL_CfgProject`, `GVL_Devices` (экземпляры `PL.FB_*`), `PRG_Devices` (вызовы с привязками), `PRG_ApplyProjectCfg` | `src/GVLs/Generated/`, `src/POUs/Generated/` |
 | `modbus-map` | карта обмена: master (сигналы MB перечня) и slave (блоки `stSts` для SCADA), CSV и Markdown | `docs/` |
 | `scada-csv` | универсальный импорт тегов SCADA: пути переменных ПЛК, узлы OPC UA, единицы, шкалы, уставки; тревоги для SCADA | `scada/` |
-| `alarm-list` | список тревог: номер `dev_no·10+слот`, код, приоритет, текст, уставка, задержка | `docs/alarms.csv` |
+| `alarm-list` | список тревог: номер `dev_no·10+слот`, код, приоритет, текст, причина, последствие и действие оператора по шаблонам библиотеки, уставка, задержка | `docs/alarms.csv` |
 | `docs-table` | «Перечень сигналов» с переменными ПЛК | `docs/signal_list.md` |
 
 Каждый файл начинается с `AUTO-GENERATED by iolistgen <версия> — не редактировать; источник:
@@ -184,7 +191,7 @@ Excel читается так, как его видит человек: объе
 
 | Пример | Что показывает |
 |---|---|
-| [КНС-1](examples/kns/README.md) — `examples/kns/io_list.csv` и `.xlsx` | перечень флагманского объекта (проект 02): уровень, поплавки, давление, расход, газоанализаторы, три насоса с ПЧ по Modbus RTU (условная карта регистров), электроснабжение, сирена и лампы (роль AUX); теги по ГОСТ 21.208-2013; 58 сигналов, 29 устройств |
+| [КНС-1](examples/kns/README.md) — `examples/kns/io_list.csv` и `.xlsx` | перечень флагманского объекта (проект 02): уровень, поплавки, давление, расход, газоанализаторы, три насоса с ПЧ по Modbus RTU (условная карта регистров), регулятор уровня (Pid), электроснабжение, сирена и лампы (роль AUX), данные приложения в `GVL_Persist`; теги по ГОСТ 21.208-2013; 58 сигналов, 30 устройств; сгенерированный код — в `src/` этого репозитория |
 | [Синтетический перечень](examples/README.md#синтетический-перечень) — `examples/synthetic/io_list_300.csv` | 300 сигналов из генератора с зерном: все типы устройств, сигналов и ролей схемы; вход для замера |
 | [Витрина ошибок](examples/README.md#витрина-ошибок) — `examples/broken/io_list_broken.csv` | намеренные ошибки всех групп правил: дубли, теги, шкалы и уставки, пересечения Modbus (в том числе 32-битного значения и битов регистра), состав устройств, параметры Cfg; [отчёт](docs/io_list_broken.validation.md) |
 
@@ -197,8 +204,8 @@ Excel читается так, как его видит человек: объе
 <!-- BEGIN benchmark -->
 | Перечень | Сигналов | Проверка, мс | Генерация, мс | Проверка + генерация, мс | `iolistgen generate` целиком, мс |
 |---|---:|---:|---:|---:|---:|
-| `io_list_300.csv` | 300 | 71,1 | 192,8 | **263,9** | 1124,5 |
-| `io_list.csv` | 58 | 17,3 | 91,5 | **108,8** | 948,0 |
+| `io_list_300.csv` | 300 | 51,2 | 154,3 | **205,5** | 1128,7 |
+| `io_list.csv` | 58 | 11,7 | 65,8 | **77,5** | 987,6 |
 
 Медианы; AMD Ryzen 7 7800X3D 8-Core Processor, логических ядер: 16, Windows-11-10.0.26300-SP0, CPython 3.12.10. Генераторы, методика и разброс — [benchmark.md](docs/benchmark.md); повторить — `python examples/benchmark.py`.
 <!-- END benchmark -->
@@ -219,14 +226,41 @@ Excel читается так, как его видит человек: объе
 | сборка wheel, установка, `pipx install .` | CI | команда `iolistgen` работает из установленного пакета |
 | `docs/schema.md` | pytest | справочные таблицы документа совпадают с каталогами пакета |
 | эталонные файлы генераторов | pytest | вывод всех генераторов по малому перечню `pytests/data/gen_fixture.csv` совпадает с `pytests/golden/` побайтно; повторный запуск ничего не меняет; плагины находятся точками входа |
-| сгенерированный ST | pytest, CI | `st_lint --strict` и сборка раскладки без замечаний; RuSTy `plc --check` по заглушке plc-process-lib (`tests_support/pl_stub/`, сверена с каталогом пакета) для малых перечней, КНС-1 и синтетического; отрицательный контроль: испорченный вызов RuSTy отклоняет — `python tests_support/check_generated_st.py` |
-| st_lint, iec_checker, RuSTy | CI | ST-раскладка шаблона |
+| сгенерированный ST | pytest, CI | `st_lint --strict` и сборка раскладки без замечаний; RuSTy `plc --check` по заглушке plc-process-lib (`tests_support/pl_stub/`) для малых перечней, КНС-1 и синтетического; отрицательный контроль: испорченный вызов RuSTy отклоняет — `python tests_support/check_generated_st.py` |
+| каталог и заглушка против библиотеки | pytest (если рядом исходники plc-process-lib) | `tests_support/check_library.py`: перечисления, Cfg с умолчаниями, Cmd/Sts/Retain, входы и выходы ФБ, константы `GVL_Const`, полнота каталога, каждый объект заглушки и шаблоны текстов тревог совпадают с исходниками выпуска 1.0.0 |
+| `src/` репозитория | pytest, CI | файлы `Generated` — побайтно вывод генератора по КНС-1; st_lint, iec_checker (обоснования — [STATIC_ANALYSIS.md](docs/STATIC_ANALYSIS.md)), RuSTy с заглушкой (`check_generated_st.py --repo`) |
+| CODESYS 3.5.17.30 | локально, Windows | `cds.py check`, `build`, `test`: сборка с plc-process-lib 1.0.0.0 и набор coUnit `FB_ProjectCfg_Test` в Control Win V3 — [ниже](#сборка-в-codesys) |
 
 ```bash
 python -m pip install -r requirements-dev.txt
 python -m ruff check . && python -m ruff format --check . && python -m mypy && python -m pytest
 python tests_support/check_generated_st.py      # сгенерированный ST: st_lint, assemble, RuSTy
+python tests_support/check_library.py           # каталог против исходников ../plc-process-lib
 ```
+
+## Сборка в CODESYS
+
+`src/` этого репозитория — пример КНС-1, сгенерированный командой
+`iolistgen generate examples/kns/io_list.csv --out . --only st-codesys --set st-codesys.doc=docs/MANUAL_STEPS.md`
+(`src/GVLs/Generated`, `src/POUs/Generated`), и ручной `PRG_Main`: регулятор уровня `LIC101` по
+примеру контракта 17.3, задание оператора в `GVL_Persist`, вызов `PRG_Devices`. Библиотека
+закреплена в `tools/codesys/config.json`: `plc-process-lib, 1.0.0.0 (plc-portfolio)`, при отсутствии
+`cds.py` собирает её в соседнем репозитории (`build_from_repo`). Проверено 19.10.2026 в CODESYS
+3.5.17.30 и CODESYS Control Win V3:
+
+| Команда | Итог |
+|---|---|
+| `python tools/codesys/cds.py check` | `check: OK (объектов 9, ошибок 0, предупреждений 0)` |
+| `python tools/codesys/cds.py check --tests` | `check: OK (объектов 11, ошибок 0, предупреждений 0)` |
+| `python tools/codesys/cds.py build` | `build: OK (ошибок 0, предупреждений 0)` |
+| `python tools/codesys/cds.py test` | `test: OK (наборов 1, тестов 4, пройдено 4, упало 0, пропущено 0)` |
+
+Набор `FB_ProjectCfg_Test` вызывает все 30 устройств с Cfg проекта и проверяет, что `CheckConfig`
+каждого ФБ её принял (`wCfgErr = 0`): зеркало проверок валидатора совпадает с библиотекой;
+отрицательный контроль — испорченная Cfg насоса — тест роняет. Объект Persistent Variables
+`GVL_Persist` скрипт CODESYS 3.5.17 не создаёт: его один раз создаёт
+`python tools_project/codesys_pvl.py` (импорт PLCopenXML), дальше текст обновляет `cds.py import`.
+Подробно — [TEST_REPORT.md](docs/TEST_REPORT.md), [MANUAL_STEPS.md](docs/MANUAL_STEPS.md#9-код-сгенерированный-iolistgen-в-проекте-codesys).
 
 ## Документация
 
@@ -249,16 +283,18 @@ python tests_support/check_generated_st.py      # сгенерированный
 
 ## Ограничения и дальнейшие шаги
 
-- Сгенерированный ST проверен линтером и RuSTy по заглушке библиотеки; сборка в CODESYS 3.5.17
-  с настоящей plc-process-lib — следующий этап ([MANUAL_STEPS.md](docs/MANUAL_STEPS.md), раздел 9).
-  Объект Persistent Variables в CODESYS 3.5.17 скриптом не создаётся — один ручной шаг.
+- Сборка проверена на CODESYS Control Win V3; на ПЛК210 — нет (таргет, объём persistent-области —
+  [MANUAL_STEPS.md](docs/MANUAL_STEPS.md), раздел 9.7). Объект Persistent Variables скриптом
+  CODESYS 3.5.17 не создаётся — один шаг `tools_project/codesys_pvl.py` или ручной в IDE.
+- ПИД-регулятор (`Pid`) генератор объявляет, но не вызывает: привязки PV, слежения и фактического
+  выхода — логика станции. Хранение задания оператора в `GVL_Persist` (`persist_extra`) — тоже.
 - Значения Modbus генератор объявляет в типе прибора; 32-битные значения с порядком слов собирает
   слой Modbus приложения, слова ПЧ разбирает адаптер приложения — их генератор не пишет. Сигналы
   `AUX` получают переменную и место в картах, логику для них пишет код станции.
 - Формат импорта тегов MasterSCADA 4D в документации вендора не описан: для неё — универсальный
   CSV, карта slave и заготовка плагина. Номер пространства имён и имя устройства в узлах OPC UA —
   сверить обзором сервера.
-- Роли и допустимые типы сигналов — по контракту plc-process-lib 1.0: дискретные роли двигателя
+- Роли и допустимые типы сигналов — по контракту plc-process-lib 1.0.0: дискретные роли двигателя
   и арматуры (`RUN_FB`, `ZSO`…) — только DI, удалённые модули ввода-вывода по Modbus для них пока
   не предусмотрены. Роль `AUX` — расширение iolistgen, предложено в контракт.
 - Правило тегов по умолчанию и предел длины имени устройства — допущения: сверить с проектным
@@ -273,13 +309,15 @@ python tests_support/check_generated_st.py      # сгенерированный
 ## Summary (EN)
 
 `iolistgen` validates a process-control IO list (Excel or CSV) and generates PLC code for the
-plc-process-lib device library (CODESYS V3.5), Modbus maps, a SCADA tag import and documentation.
+plc-process-lib 1.0.0 device library (CODESYS V3.5), Modbus maps, a SCADA tag import and documentation.
 A row is a signal, rows sharing `device` form one function-block instance, roles map rows to FB
-pins, `params` sets any Cfg field as an ST literal, and `AUX` rows carry signals without an FB.
-73 rules report file, row, column and a fix; structural rules cannot be silenced. Excel quirks
-(merged cells, formulas, comma decimals, Unicode minus) are handled. Generation is all-or-nothing,
-deterministic and idempotent; the ST is linted and type-checked with RuSTy against a library stub.
-Python 3.10+, pydantic v2, openpyxl, Jinja2; ruff, mypy `--strict`, pytest and hypothesis in CI.
+pins, `params` sets any Cfg field as an ST literal, `AUX` rows carry signals without an FB, and a PID
+loop is a device row without I/O. 74 rules report file, row, column and a fix; structural rules
+cannot be silenced. Generation is all-or-nothing, deterministic and idempotent. The catalog is
+checked against the released library sources by script; the KNS example code is built in CODESYS
+3.5.17.30 with plc-process-lib 1.0.0.0 (0 errors, 0 warnings) and coUnit tests confirm that every
+device accepts its project Cfg. Python 3.10+, pydantic v2, openpyxl, Jinja2; ruff, mypy `--strict`,
+pytest and hypothesis in CI.
 
 ## Лицензия
 

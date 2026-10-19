@@ -39,6 +39,16 @@ header_search_rows = 30
 # IOL414 = "off"       # Modbus TCP: адреса слейвов 248…255 допустимы
 # IOL416 = "off"       # Modbus TCP: Unit ID 0 допустим (в Modbus RTU адрес 0 — широковещательный)
 
+[generators.st-codesys]
+# Данные приложения в GVL_Persist после устройств: задание оператора ПИД, уставки станции.
+# Путь — от каталога этого файла; новые объявления — только в конец файла (docs/GENERATORS.md)
+# persist_extra = "persist_extra.txt"
+
+[generators.alarm-list]
+# Шаблоны текстов тревог: по умолчанию — шаблоны plc-process-lib 1.0.0 из пакета;
+# свой файл type;slot;suffix;text_ru;operator_action;cause;consequence или "none"
+# templates = "../plc-process-lib/docs/alarm_templates.csv"
+
 [generators.docs-table]
 # Опции генераторов: [generators.<имя>]; список — iolistgen generate --list
 filename = "signal_list.md"

@@ -7,6 +7,67 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-19
+
+Переход на выпущенную библиотеку plc-process-lib 1.0.0 (пункты G1–G9 `docs/CONSUMERS.md` библиотеки) и
+первая сборка сгенерированного кода в CODESYS.
+
+### Added
+
+- Тип устройства `Pid` — ПИД-регулятор без сигналов ввода-вывода (G3): строка устройства без
+  `signal_type` и `role`, диапазон PV колонками (`rPvMin_eu`, `rPvMax_eu`, пределы задания по
+  умолчанию), параметры `ST_PidCfg` в `params`, сигналы `AUX` в составе; каталог `ST_PidCfg`,
+  `ST_PidCmd`, `ST_PidSts` (32 регистра), `E_PidAction`, `E_PidPvFailAction`, `E_PidAlarm`, входы и
+  выходы `FB_PID`; зеркало `FB_PID.CheckConfig` (биты `PID_CFG_*`); экземпляр `PL.FB_PID`, Cmd в
+  `GVL_Hmi`, Cfg и Retain в `GVL_Persist`, блок Sts в карте slave, теги SCADA (`Sp`, `Pv`, `Out`…),
+  тревога слота 0 `PVF`; в `PRG_Devices` — образец вызова для логики станции.
+- Данные приложения в `GVL_Persist` — опция `st-codesys.persist_extra` (G4): файл с объявлениями ST
+  дописывается после устройств; `persist_check` сверяет их порядок, типы и состав с прошлой
+  генерацией.
+- Шаблоны текстов тревог библиотеки 1.0.0 в пакете (`iolistgen/data/alarm_templates.csv`) — тексты
+  по умолчанию для `alarm-list` и `scada-csv`: текст, действие оператора, причина и последствие
+  каждого слота, в том числе обновлённые формулировки OOR, TRQ, COM (G5, G7); `templates = none` —
+  прежние встроенные тексты.
+- Константы `GVL_Const` таблицы 5.1 в каталоге, в том числе `VLV_UNSEAT_BYPASS`,
+  `CV_TIGHT_HYST_PCT`, `VFD_POWER_UP_DELAY` (G6); число слотов тревог типов сверяется с ними.
+- `E_AlarmEventReason` с причиной `Disabled := 11` в каталоге и заглушке (G2).
+- `tests_support/check_library.py` и тест `pytests/test_library_source.py`: каталог и заглушка
+  сверяются с исходниками выпуска plc-process-lib 1.0.0 — перечисления, Cfg с умолчаниями,
+  Cmd/Sts/Retain, входы и выходы ФБ, константы, полнота каталога, каждый объект заглушки, шаблоны
+  текстов тревог.
+- `src/` — пример КНС-1, сгенерированный `iolistgen`, и ручной `PRG_Main` (регулятор уровня, задание
+  оператора в `GVL_Persist`); набор coUnit `FB_ProjectCfg_Test`: Cfg проекта всех 30 устройств
+  принимает `CheckConfig` библиотеки, инициализаторы Cfg, «применить уставки проекта».
+  Проверено в CODESYS 3.5.17.30 с plc-process-lib 1.0.0.0: `cds.py check` и `check --tests` —
+  0 ошибок, `build` и `build --tests` — 0 ошибок и 0 предупреждений, `test` — 4 из 4.
+- `tools_project/codesys_pvl.py`: объект Persistent Variables в проекте `cds.py` импортом PLCopenXML
+  (скриптом CODESYS 3.5.17 он не создаётся).
+- Пример КНС-1: регулятор уровня `LIC101` (Pid), `persist_extra.txt`, `iolistgen.toml` примера;
+  синтетический перечень — с регулятором.
+- `check_generated_st.py --repo`: RuSTy по `src/` репозитория с заглушкой библиотеки (CI).
+- Правило IOL213 (предупреждение): у ПИД-регулятора не задан диапазон PV.
+
+### Changed
+
+- `ST_DeviceSts`: регистр 13 — `wAlmSuppressed` (слоты, подавленные логикой) вместо резерва
+  `wReserve`; `wAlmShelved` — только отложенные оператором; точка SCADA `AlmSuppressed`, имя поля в
+  карте slave (G1).
+- Закрепление библиотеки в `tools/codesys/config.json`: `plc-process-lib, 1.0.0.0 (plc-portfolio)`,
+  сборка из соседнего репозитория (`build_from_repo`) при отсутствии (G9).
+- Документация: `xValid` аналогового входа в защитных полосах NE 43 — FALSE (G8); схема перечня,
+  генераторы, ручные шаги CODESYS (раздел 9 — по проверенному прогону), отчёты.
+- Опции-пути (`persist_extra`, `templates`): относительный путь из `iolistgen.toml` — от каталога
+  файла настроек.
+- Пример шаблона (`FB_Example`, `F_Clamp`, их тесты) удалён из `src/` и `tests/`; обоснования
+  iec_checker и `docs/STATIC_ANALYSIS.md` — под новый `src/`.
+- IOL202 — «тип сигнала не задан или неизвестен»; IOL402, IOL603 срабатывают и у строки устройства.
+
+### Fixed
+
+- Строка без типа сигнала больше не проходит проверку молча (раньше она ломала построение модели).
+
+## [0.1.0] - 2026-10-16
+
 ### Added
 
 - Пакет `iolistgen` 0.1.0 (Python 3.10+): проверка перечня сигналов (CSV, XLSX) по схеме из

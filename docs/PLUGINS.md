@@ -69,12 +69,17 @@ for device in model.devices_by_dev_no():  # порядок GVL_Persist (конт
     print(f"st{device.ident}Cfg : PL.{spec.cfg}{' := ' + init if init else ''};")
     for slot in spec.alarm_slots:  # код тревоги и номер
         print(f"{device.ident}.{slot.suffix}", device.alarm_id_base + slot.index)
-    main = device.main  # главная строка
+    if device.spec.has_io:  # у Pid сигналов ввода-вывода нет: main_role = None
+        main = device.main  # сигнал главной строки
     run_fb = device.signal(Role.RUN_FB)  # сигнал роли или None
     if device.link_power:  # идентификатор DI-устройства «напряжение»
         print(f"xPowerOk := GVL_Devices.fb{device.link_power}.xValue")
 ```
 
+- Устройство без сигналов ввода-вывода (`device.spec.has_io = False`, тип `Pid`): `main_role` —
+  `None`, `device.main` недоступен, единицы и диапазон PV — `device.units`, `device.range_min`,
+  `device.range_max` (они есть у любого устройства — из главной строки). В `build_plc(model)` у
+  такого устройства `binding.called = False`: генератор ST его не вызывает.
 - Сигнал без ФБ (роль `AUX`): `signal.is_aux`; у простого сигнала без устройства
   `signal.device is None` — генератор, который ищет устройство сигнала, проверяет это
   (`model.plain_signals()` — все такие сигналы). Сигналы AUX устройства лежат в

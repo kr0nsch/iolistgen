@@ -53,10 +53,10 @@ iolistgen generate --list                                 # генераторы
 | `GVL_IO` | GVL, `qualified_only` | переменные сигналов: каналы модулей, значения Modbus, состояние слейвов, переменные адаптеров ПЧ |
 | `GVL_DevIdx` | GVL `CONSTANT` | `<DEV> : UINT := dev_no` — номера устройств для SCADA и логики станции |
 | `GVL_Hmi` | GVL | `st<DEV>Cmd : PL.ST_<Dev>Cmd` и импульс `xApplyProjectCfg` |
-| `GVL_Persist` | Persistent Variables | `uiLayoutVersion`, затем по возрастанию `dev_no`: `st<DEV>Cfg` с уставками перечня, `st<DEV>Retain` (кроме AI/DI) |
+| `GVL_Persist` | Persistent Variables | `uiLayoutVersion`, затем по возрастанию `dev_no`: `st<DEV>Cfg` с уставками перечня, `st<DEV>Retain` (кроме AI/DI), затем данные приложения (`persist_extra`) |
 | `GVL_CfgProject` | GVL `CONSTANT` | те же Cfg с теми же инициализаторами — «уставки проекта» |
-| `GVL_Devices` | GVL | экземпляры `fb<DEV> : PL.FB_<Type>` без параметров |
-| `PRG_Devices` | PROGRAM | вызовы устройств: входы из `GVL_IO`, все `VAR_IN_OUT`, выходы в `GVL_IO` |
+| `GVL_Devices` | GVL | экземпляры `fb<DEV> : PL.FB_<Type>` без параметров, в том числе `PL.FB_PID` |
+| `PRG_Devices` | PROGRAM | вызовы устройств: входы из `GVL_IO`, все `VAR_IN_OUT`, выходы в `GVL_IO`; у ПИД-регулятора — образец вызова в комментарии |
 | `PRG_ApplyProjectCfg` | PROGRAM | `GVL_Persist.st<DEV>Cfg := GVL_CfgProject.st<DEV>Cfg;` — Retain не трогается |
 
 ### `GVL_IO`: адреса и слой ввода-вывода
@@ -121,6 +121,15 @@ GVL_IO.rP101_SpeedRef_pct := GVL_Devices.fbP101.rSpeedRef_pct;
   `dev_no`.
 - Сигналы AUX устройства в вызов не входят (у ФБ нет такого входа): над вызовом — комментарий
   `// без входа ФБ (AUX, код приложения): GVL_IO.uiP101_FCODE — …`.
+- ПИД-регулятор (тип `Pid`, [schema.md](schema.md#3-устройства-и-главная-строка)) не вызывается: у
+  него нет сигналов перечня, а привязки `rPv_eu`, `xPvValid`, `xTrack`, `rOutAct_pct` — знание логики
+  станции (контракт 17.3). На его месте в `PRG_Devices` — заголовок устройства и образец вызова в
+  комментарии с `stCmd`, `stCfg`, `stRetain` (и `itfTime`, если задана опция `time_source`);
+  экземпляр, Cmd, Cfg, Retain, блок Sts, теги и тревога PVF генерируются как у других устройств.
+- `xValid` аналогового входа (`xPosFbValid := fb<LINK>.xValid` у `link_fb`, `xPvValid` ПИД в логике
+  станции): в plc-process-lib 1.0.0 он FALSE не только при отказе, но и в защитных полосах NE 43
+  (3,6…3,8 и 20,5…21 мА) после `tFailDelay` — значение там граница насыщения и для управления
+  непригодно (решение AI-13 библиотеки). Привязка `xValid` к входам достоверности по-прежнему верна.
 - Источник времени не привязывается — устройства берут встроенное системное время (контракт 20).
   Опция `time_source` передаёт `itfTime := <выражение>` всем устройствам (модель, `FB_FakeTime`).
   Опция `alarm_sink` добавляет в начало `PL.GVL_Lib.itfAlarmSink := <выражение>;` (контракт 5.3:
@@ -235,8 +244,10 @@ rLIC101SpOper_m : REAL := 2.0;   // задание оператора регул
 блока — байты 2n…2n+1 структуры, 32-битные поля выровнены по 4 байтам, первым идёт `stCommon` с
 `eDevType`. Колонки: `dev_no`, `device`, `device_type`, `function`, `area`, `address`, `offset`
 (регистр от начала блока), `length`, `data_type` (перечисления — INT), `word_order` (у 32-битных),
-`field`, `description`, `units`, `plc_path`. Размеры блоков (22, 15, 34, 26 регистров) сверены с
-таблицей 4.6 тестом.
+`field`, `description`, `units` (у полей `_eu` AI и ПИД — единицы PV из перечня), `plc_path`.
+Размеры блоков (22, 15, 34, 26, у ПИД — 32 регистра) сверены с таблицей 4.6 тестом. Регистр 13
+общего заголовка — `stCommon.wAlmSuppressed` (бит i — слот подавлен логикой, SuppressedByDesign;
+в 1.0.0 заменил резерв `wReserve`), регистр 10 `wAlmShelved` — только отложенные оператором.
 
 `modbus_map.md` — обе карты для документации: таблица master, таблица блоков slave и раскладка
 каждой структуры `stSts`.
@@ -280,7 +291,8 @@ rLIC101SpOper_m : REAL := 2.0;   // задание оператора регул
 | `opcua_node_id` | узел OPC UA сервера CODESYS: `ns=4;s=\|var\|CODESYS Control Win V3.Application.…` |
 
 Точки по типам устройств: общий заголовок (`Mode`, `Ne107`, `Status`, `Fault`, `Warning`,
-`CfgErr`, `AlmActive`, `AlmUnack`, `AlmShelved`, `PrioUnack`, `CmdResult`, `CmdSeq`, `DevType`) и
+`CfgErr`, `AlmActive`, `AlmUnack`, `AlmShelved` — отложены оператором, `AlmSuppressed` — подавлены
+логикой, `PrioUnack`, `CmdResult`, `CmdSeq`, `DevType`) и
 общие команды (`Cmd.SetAuto`, `Cmd.SetManual`, `Cmd.SetOos`, `Cmd.Reset`, `Cmd.Ack`, маски
 `Cmd.AckReq`, `Cmd.ShelveReq`, `Cmd.UnshelveReq`); AI — `Value`, `ValuePct`, `Valid`, `Raw`,
 `Signal`, `SubstRemain`, `Cmd.SubstValue`; DI — `Value`, `Valid`, `SubstRemain`,
@@ -288,7 +300,8 @@ rLIC101SpOper_m : REAL := 2.0;   // задание оператора регул
 `Cmd.ResetMaint` (ПЧ — ещё `SpeedRef`, `SpeedAct`, `SpeedAutoActive`, `Cmd.SpeedSp`); арматура —
 `Opened`, `Closed`, `State`, блокировки, счётчики, `Cmd.Open`, `Cmd.Close`, `Cmd.Stop` (только у
 задвижки с приводом); регулирующий клапан — `Out`, `OutmA`, `PosSp`, `PosFb`, `Deviation`,
-`AutoActive`, `Cmd.PosSpMan`.
+`AutoActive`, `Cmd.PosSpMan`; ПИД-регулятор — `Sp`, `SpTarget`, `Pv` (единицы и шкала — диапазон PV),
+`Err`, `Out`, `P`, `I`, `D`, `Dt`, `SatHigh`, `SatLow`, `Cmd.Sp`, `Cmd.ManualOut`.
 
 Сигнал без ФБ (роль `AUX`) — один тег с именем тега перечня (`HL1`, `P101_FCODE`): переменная
 `GVL_IO` (`plc_path` — `Application.GVL_IO.xHL1`), доступ `R`, единицы и шкала из перечня. Тег
@@ -387,8 +400,10 @@ cause;consequence`, по строке на каждый слот каждого 
 
 ## Проверка ST без CODESYS
 
-Компиляция в CODESYS 3.5.17 с настоящей библиотекой plc-process-lib — следующий этап (сборка
-`tools/codesys/cds.py`, docs/MANUAL_STEPS.md). До неё сгенерированный код проверяется так
+Настоящая проверка — сборка в CODESYS 3.5.17.30 с библиотекой plc-process-lib 1.0.0.0: код по
+перечню КНС-1 в `src/` этого репозитория собран без ошибок и предупреждений, Cfg всех устройств
+приняты `CheckConfig` библиотеки (README, «Сборка в CODESYS»; [TEST_REPORT.md](TEST_REPORT.md)). Без
+CODESYS — на любом ПК и в CI — сгенерированный код проверяется так
 (`python tests_support/check_generated_st.py`, в CI — задание RuSTy):
 
 1. **st_lint** (`tools/check/st_lint.py --strict`) — префиксы, заголовки POU, длина строк,
@@ -397,8 +412,9 @@ cause;consequence`, по строке на каждый слот каждого 
 3. **RuSTy** `plc --check` (1.0.6) — разбор и проверка типов по заглушке библиотеки
    `tests_support/pl_stub/`: DUT (перечисления, Cmd, Cfg с умолчаниями, Sts, Retain), интерфейсы
    `I_TimeSource` и `I_AlarmSink`, `GVL_Const`, `GVL_Lib` и ФБ устройств с теми же входами, выходами
-   и `VAR_IN_OUT`, что в `API.md`, без тел. Тест `pytests/test_pl_stub.py` сверяет заглушку с
-   каталогом пакета; DUT заглушки совпадают и с исходниками библиотеки plc-process-lib на 2026-10-16.
+   и `VAR_IN_OUT`, что в выпуске 1.0.0, без тел. Тест `pytests/test_pl_stub.py` сверяет заглушку с
+   каталогом пакета, а `tests_support/check_library.py` (тест `pytests/test_library_source.py`) —
+   каталог и каждый объект заглушки с исходниками библиотеки (`PL_REPO` или `../plc-process-lib`).
 
 Перед RuSTy копия раскладки меняется только там, где RuSTy не понимает конструкцию CODESYS:
 `VAR_IN_OUT CONSTANT` → `VAR_IN_OUT` в заглушке (RuSTy: E034) и `GVL_CfgProject.st<DEV>Cfg` →
@@ -406,7 +422,8 @@ cause;consequence`, по строке на каждый слот каждого 
 `kns_mini.csv` с опциями по умолчанию, `gen_fixture.csv` (все роли и виды привязок) с
 `time_source` и `alarm_sink`, перечень КНС-1 из `examples/kns/` (с сигналами AUX) и
 синтетический на 300 сигналов; ключ `--list ПЕРЕЧЕНЬ` проверяет любой перечень (с
-`iolistgen.toml` рядом с ним, как у команды `iolistgen`).
+`iolistgen.toml` рядом с ним, как у команды `iolistgen`), ключ `--repo` — раскладку `src/` этого
+репозитория (пример КНС-1 и `PRG_Main`) без генерации.
 
 **Что RuSTy ловит** (отрицательный контроль в `pytests/test_st_check.py`): неизвестный вход ФБ,
 пропущенный `VAR_IN_OUT` (E030), чужую Cfg или Cmd в параметре (E037), несуществующую переменную
