@@ -386,15 +386,23 @@ class Signal(_Frozen):
 
 
 class Device(_Frozen):
-    """Устройство — экземпляр ФБ библиотеки, группа строк с одним ``device``."""
+    """Устройство — экземпляр ФБ библиотеки, группа строк с одним ``device``.
+
+    ``main_role`` — роль главной строки; ``None`` у устройства без сигналов ввода-вывода (Pid): его
+    главная строка — строка устройства, в ``signals`` её нет (там только сигналы AUX, если есть).
+    ``units``, ``range_min``, ``range_max`` — из главной строки (у Pid — единицы и диапазон PV).
+    """
 
     name: str
     ident: str
     device_type: DeviceType
     dev_no: int
     description: str
-    main_role: Role
+    main_role: Role | None
     signals: tuple[Signal, ...]
+    units: str | None = None
+    range_min: float | None = None
+    range_max: float | None = None
     setpoints: Setpoints = Setpoints()
     delay_on_ms: int | None = None
     delay_off_ms: int | None = None
@@ -412,6 +420,8 @@ class Device(_Frozen):
 
     @property
     def main(self) -> Signal:
+        """Сигнал главной строки (у устройства без сигналов ввода-вывода его нет)."""
+        assert self.main_role is not None, f"{self.name}: у {self.device_type.value} нет сигнала главной строки"
         signal = self.signal(self.main_role)
         assert signal is not None
         return signal

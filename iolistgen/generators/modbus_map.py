@@ -205,7 +205,7 @@ def slave_rows(
                     "word_order": _field_word_order(field, word_order),
                     "field": f"stSts.{field.path}",
                     "description": field.field.description,
-                    "units": field.field.units or None,
+                    "units": field.field.units or (device.units if field.path.endswith("_eu") else None) or None,
                     "plc_path": f"{application}.{GVL_DEVICES}.{binding.instance}.stSts.{field.path}",
                 }
             )

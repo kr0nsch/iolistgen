@@ -5,9 +5,13 @@ from __future__ import annotations
 import pytest
 
 from iolistgen.catalog import (
+    AI_LOWCUT_MAX_PCT,
+    ALARM_SLOTS,
     DEVICE_TYPES,
+    GVL_CONST_BY_NAME,
     LINK_COLUMNS,
     ROLE_DIRECTIONS,
+    STARTS_WINDOW_MAX,
     STRUCTS,
     PathError,
     leaf_fields,
@@ -83,9 +87,38 @@ def test_every_device_type_is_described() -> None:
     assert set(DEVICE_TYPES) == set(DeviceType)
     for spec in DEVICE_TYPES.values():
         assert spec.cfg in STRUCTS
-        assert spec.main_roles
+        assert bool(spec.main_roles) == spec.has_io  # без сигналов (Pid) главная строка — строка устройства
         assert all(spec.role(role) is not None for role in spec.main_roles)
         assert len({slot.suffix for slot in spec.alarm_slots}) == len(spec.alarm_slots)
+
+
+def test_pid_is_device_without_io() -> None:
+    """Тип Pid (CONSUMERS G3): без ролей, с Retain, Sts 32 регистра, один слот тревоги PVF."""
+    spec = DEVICE_TYPES[DeviceType.PID]
+    assert not spec.has_io and spec.roles == () and spec.main_roles == ()
+    assert (spec.fb, spec.cmd, spec.cfg, spec.sts) == ("FB_PID", "ST_PidCmd", "ST_PidCfg", "ST_PidSts")
+    assert spec.has_retain and spec.sts_registers == 32
+    assert [(slot.index, slot.member, slot.suffix) for slot in spec.alarm_slots] == [(0, "PvInvalid", "PVF")]
+    assert spec.delay_on is None and spec.delay_off is None and spec.links == ()
+    defaults = {leaf.path: leaf.default for leaf in leaf_fields("ST_PidCfg")}
+    assert defaults["eAction"] == "Reverse" and defaults["rKp"] == 1.0 and defaults["tDtMax"] == 2000
+    assert defaults["astAlarm[0].ePriority"] == "Medium" and defaults["astAlarm[1].ePriority"] == "None"
+    assert resolve_path("ST_PidCfg", "astAlarm[PvInvalid].ePriority").path == "astAlarm[0].ePriority"
+
+
+def test_alarm_slot_counts_match_library_constants() -> None:
+    """Число слотов типа — константа <TYPE>_ALARM_COUNT библиотеки (у Motor слоты 6–7 только у ПЧ)."""
+    counts = {
+        DeviceType.ANALOG_INPUT: "AI_ALARM_COUNT",
+        DeviceType.DIGITAL_INPUT: "DI_ALARM_COUNT",
+        DeviceType.MOTOR_VFD: "MOT_ALARM_COUNT",
+        DeviceType.VALVE: "VLV_ALARM_COUNT",
+        DeviceType.CONTROL_VALVE: "CV_ALARM_COUNT",
+        DeviceType.PID: "PID_ALARM_COUNT",
+    }
+    for device_type, name in counts.items():
+        assert len(DEVICE_TYPES[device_type].alarm_slots) == int(GVL_CONST_BY_NAME[name].value), device_type
+    assert ALARM_SLOTS == 8 and STARTS_WINDOW_MAX == 30 and AI_LOWCUT_MAX_PCT == 20.0
 
 
 def test_roles_follow_contract_20_2() -> None:

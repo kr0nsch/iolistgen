@@ -131,6 +131,9 @@ E_VALVE_ALARM = enum_type(
     ],
 )
 E_CV_ALARM = enum_type("E_CvAlarm", [("Deviation", 0), ("FbFailure", 1), ("PositionerFault", 2), ("InterlockAct", 3)])
+E_PID_ACTION = enum_type("E_PidAction", [("Reverse", 0), ("Direct", 1)])
+E_PID_PV_FAIL_ACTION = enum_type("E_PidPvFailAction", [("Hold", 0), ("SafeOut", 1), ("ShedToManual", 2)])
+E_PID_ALARM = enum_type("E_PidAlarm", [("PvInvalid", 0)])
 
 ST_TYPES: dict[str, StType] = {
     t.name: t
@@ -147,6 +150,8 @@ ST_TYPES: dict[str, StType] = {
         E_VALVE_TYPE,
         E_VALVE_SAFE_POS,
         E_CV_FAULT_ACTION,
+        E_PID_ACTION,
+        E_PID_PV_FAIL_ACTION,
         E_ALARM_PRIORITY,
     )
 }
@@ -331,6 +336,31 @@ STRUCTS: dict[str, tuple[FieldSpec, ...]] = {
             E_CV_ALARM,
             (AlarmPriority.LOW, AlarmPriority.LOW, AlarmPriority.MEDIUM) + (AlarmPriority.NONE,) * 5,
         ),
+    ),
+    "ST_PidCfg": (
+        _scalar("eAction", E_PID_ACTION, "Reverse", "действие: Reverse (e = SP − PV) или Direct (e = PV − SP)"),
+        _scalar("rKp", REAL, 1.0, "коэффициент усиления, %/%; знак — только через eAction"),
+        _scalar("rTi_s", REAL, 30.0, "время интегрирования, с; 0 — без И"),
+        _scalar("rTd_s", REAL, 0.0, "время дифференцирования, с; 0 — без Д"),
+        _scalar("rDFilterN", REAL, 10.0, "фильтр Д: Tf = Td / N"),
+        _scalar("rTt_s", REAL, 0.0, "постоянная слежения anti-windup, с; 0 — авто"),
+        _scalar("rPvMin_eu", REAL, 0.0, "нижняя граница диапазона PV для нормировки, инж. ед."),
+        _scalar("rPvMax_eu", REAL, 100.0, "верхняя граница диапазона PV, инж. ед."),
+        _scalar("rSpMin_eu", REAL, 0.0, "нижний предел задания, инж. ед."),
+        _scalar("rSpMax_eu", REAL, 100.0, "верхний предел задания, инж. ед."),
+        _scalar("rSpRate_ups", REAL, 0.0, "рампа задания, инж. ед./с; 0 — нет"),
+        _scalar("rOutMin_pct", REAL, 0.0, "нижний предел выхода, %"),
+        _scalar("rOutMax_pct", REAL, 100.0, "верхний предел выхода, %"),
+        _scalar("rOutRate_pctps", REAL, 0.0, "ограничение скорости выхода, %/с; 0 — нет"),
+        _scalar("rDeadband_pct", REAL, 0.0, "зона нечувствительности по ошибке, % диапазона PV"),
+        _scalar("tSample", TIME, 0, "период расчёта; T#0S — каждый вызов"),
+        _scalar("tDtMax", TIME, 2000, "больший шаг времени — разрыв: шаг пропускается"),
+        _scalar("ePvFailAction", E_PID_PV_FAIL_ACTION, "Hold", "реакция на недостоверную PV в Auto"),
+        _scalar("rSafeOut_pct", REAL, 0.0, "выход при ePvFailAction = SafeOut, %"),
+        _scalar("xSpTrackPv", BOOL, False, "в Manual задание следует за PV"),
+        _scalar("xUseOutAct", BOOL, False, "обратный расчёт по rOutAct_pct (внешнее насыщение)"),
+        _ALARM_ID_BASE,
+        _alarm_array(E_PID_ALARM, (AlarmPriority.MEDIUM,) + (AlarmPriority.NONE,) * 7),
     ),
 }
 
@@ -565,6 +595,9 @@ class DeviceTypeSpec:
     delay_off: str | None
     links: tuple[LinkSpec, ...] = ()
     notes: tuple[str, ...] = field(default=())
+    has_io: bool = True
+    """Есть сигналы ввода-вывода и вызов в ``PRG_Devices``; ``False`` — строка устройства без
+    сигнала (Pid): экземпляр, Cmd, Cfg, Retain, Sts и тревоги есть, вызов пишет логика станции."""
 
     def role(self, role: Role) -> RoleSpec | None:
         return next((spec for spec in self.roles if spec.role is role), None)
@@ -880,6 +913,26 @@ DEVICE_TYPES: dict[DeviceType, DeviceTypeSpec] = {
             delay_on="tDev",
             delay_off=None,
             links=(_LINK_FB,),
+        ),
+        DeviceTypeSpec(
+            device_type=DeviceType.PID,
+            title="ПИД-регулятор: строка устройства без сигналов, вызов ФБ — в логике станции",
+            fb="FB_PID",
+            cmd="ST_PidCmd",
+            cfg="ST_PidCfg",
+            sts="ST_PidSts",
+            has_retain=True,
+            sts_registers=32,
+            roles=(),
+            main_roles=(),
+            alarm_slots=(AlarmSlot(0, "PvInvalid", "PVF", "недостоверная регулируемая величина"),),
+            delay_on=None,
+            delay_off=None,
+            notes=(
+                "строка устройства — без signal_type и role: device_type = Pid, dev_no, диапазон PV, params; "
+                "привязки rPv_eu, xPvValid, xTrack, rOutAct_pct пишет логика станции (контракт 17.3)",
+            ),
+            has_io=False,
         ),
     )
 }

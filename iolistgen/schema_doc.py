@@ -70,7 +70,7 @@ def device_types_table() -> str:
         "|---|---|---|---:|---|---|---|---|---|",
     ]
     for spec in DEVICE_TYPES.values():
-        main = " или ".join(f"`{role.value}`" for role in spec.main_roles)
+        main = " или ".join(f"`{role.value}`" for role in spec.main_roles) or "строка устройства без сигнала"
         links = ", ".join(f"`{link.column}`" for link in spec.links) or "—"
         lines.append(
             f"| `{spec.device_type.value}` | `{LIBRARY_NAMESPACE}.{spec.fb}` | `{spec.cmd}`, `{spec.cfg}`, "
@@ -104,6 +104,13 @@ def roles_table() -> str:
             lines.append(
                 f"| {device} | `{role.role.value}` | {types} | {_cell(mb_types)} | `{_cell(role.pin)}` "
                 f"({role.direction.label}) | {required} | {_cell(title)} |"
+            )
+    for spec in DEVICE_TYPES.values():
+        if not spec.has_io:
+            lines.append(
+                f"| `{spec.device_type.value}` | — | — | — | — | — | сигналов ввода-вывода нет: строка устройства без "
+                "`signal_type` и `role`; привязки ФБ (`rPv_eu`, `xPvValid`, `xTrack`, `rOutAct_pct`) пишет логика "
+                "станции |"
             )
     aux_types = ", ".join(t.value for t in SignalType if t in AUX_SIGNAL_TYPES)
     lines.append(
@@ -174,6 +181,13 @@ def _source_of(device_type: DeviceType, path: str) -> str:
             "xFbUsed": "params; задан `link_fb` → TRUE",
             "tDev": "колонка `delay_on_s` или params",
             "astAlarm[i].ePriority": "колонка `alarm_priority` (слоты Medium) или params",
+        },
+        DeviceType.PID: {
+            "rPvMin_eu": "колонка `range_min` или params",
+            "rPvMax_eu": "колонка `range_max` или params",
+            "rSpMin_eu": "params; задан диапазон PV → `range_min`",
+            "rSpMax_eu": "params; задан диапазон PV → `range_max`",
+            "astAlarm[i].ePriority": "колонка `alarm_priority` (слот 0 PvInvalid) или params",
         },
     }
     managed[DeviceType.MOTOR_VFD] = {
@@ -319,6 +333,7 @@ def schema_json() -> dict[str, Any]:
                 "sts_registers": spec.sts_registers,
                 "has_retain": spec.has_retain,
                 "main_roles": [role.value for role in spec.main_roles],
+                "has_io": spec.has_io,
                 "delay_on": spec.delay_on,
                 "delay_off": spec.delay_off,
                 "links": [link.column for link in spec.links],

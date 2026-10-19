@@ -6,10 +6,10 @@ from collections.abc import Callable
 
 import pytest
 
-from iolistgen.enums import DeviceType
+from iolistgen.enums import DeviceType, Role
 from iolistgen.model import Device
 from iolistgen.validate import CheckResult
-from pytests.helpers import ai, codes, di, motor_vfd, signal, valve
+from pytests.helpers import ai, codes, di, motor_vfd, pid, signal, valve
 
 Check = Callable[..., CheckResult]
 
@@ -315,6 +315,7 @@ def test_default_configurations_pass_check_config(check_rows: Check) -> None:
             "role": "CMD_RUN",
         },
         *cv_params(""),
+        pid(dev_no=51),
     ]
     result = check_rows(rows)
     assert result.diagnostics == [], [d.render() for d in result.diagnostics]
@@ -375,7 +376,7 @@ def test_modbus_start_with_comm_loss_warning(check_rows: Check) -> None:
     result = check_rows(rows)
     assert codes(result) == ["IOL316"]
     assert result.model is not None
-    assert result.model.device("P101").main_role.value == "VFD_CTW"
+    assert result.model.device("P101").main_role is Role.VFD_CTW
 
 
 def test_initializer_writes_only_changes(check_rows: Check) -> None:

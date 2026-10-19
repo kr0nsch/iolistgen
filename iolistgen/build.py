@@ -7,6 +7,10 @@
 Строка с ролью ``AUX`` — сигнал без входа и выхода ФБ: в устройстве (сколько угодно строк) или
 отдельно, без ``device`` и ``device_type`` («простой» сигнал: лампа, сирена, реле). Простой
 сигнал устройством не считается: экземпляра ФБ, Cmd, Cfg и тревог у него нет.
+
+У типа без сигналов ввода-вывода (``Pid``) главная строка — строка устройства: без ``signal_type`` и
+``role``, с ``device_type``, ``dev_no``, диапазоном PV и ``params``. Других строк, кроме ``AUX``, у
+такого устройства нет: привязки ФБ пишет логика станции (контракт plc-process-lib 17.3).
 """
 
 from __future__ import annotations
@@ -104,7 +108,24 @@ def group_devices(drafts: list[SignalDraft], bag: DiagnosticBag) -> list[DeviceD
     for device in devices:
         if device.plain:
             _check_plain(device, bag)
+    _check_signal_types(drafts, bag)
     return devices
+
+
+def _check_signal_types(drafts: list[SignalDraft], bag: DiagnosticBag) -> None:
+    """Тип сигнала есть у каждой строки, кроме строки устройства без сигналов (Pid)."""
+    for draft in drafts:
+        if draft.device_row or draft.signal_type is not None or "signal_type" in draft.invalid:
+            continue
+        if "signal_type" not in draft.columns:
+            continue  # колонки нет в файле: одна ошибка IOL003 на весь файл
+        bag.add(
+            "IOL202",
+            f"у сигнала {draft.label} не задан тип сигнала",
+            "укажите AI, DI, DO, AO или MB; строка ПИД-регулятора (device_type = Pid) — без типа сигнала и роли",
+            source=draft.cell("signal_type"),
+            tag=draft.tag,
+        )
 
 
 def _check_plain(device: DeviceDraft, bag: DiagnosticBag) -> None:
@@ -205,10 +226,11 @@ def _resolve_type(device: DeviceDraft, bag: DiagnosticBag, groups: dict[str, Dev
                     device=device.name,
                 )
                 return
+            types = ", ".join(t.value for t in DEVICE_TYPES)
             bag.add(
                 "IOL302",
                 f"у устройства {device.name} не задан тип",
-                "укажите device_type в главной строке: AnalogInput, DigitalInput, Motor, MotorVfd, Valve, ControlValve",
+                f"укажите device_type в главной строке: {types}",
                 source=first.cell("device_type"),
                 tag=first.tag,
                 device=device.name,
@@ -267,6 +289,9 @@ def _column_exists(device: DeviceDraft, name: str) -> bool:
 def _resolve_roles(device: DeviceDraft, bag: DiagnosticBag) -> None:
     spec = device.spec
     if spec is None:
+        return
+    if not spec.has_io:
+        _resolve_device_row(device, spec, bag)
         return
     explicit = {draft.role for draft in device.signals if draft.role is not None}
     default = spec.single_signal_default
@@ -331,6 +356,63 @@ def _resolve_roles(device: DeviceDraft, bag: DiagnosticBag) -> None:
         device.roles[draft.role] = draft
     _resolve_main(device, spec, bag)
     _check_required_roles(device, spec, bag)
+
+
+def _resolve_device_row(device: DeviceDraft, spec: DeviceTypeSpec, bag: DiagnosticBag) -> None:
+    """Устройство без сигналов (Pid): одна строка устройства без signal_type и role, остальные — AUX."""
+    kind = spec.device_type.value
+    for draft in device.signals:
+        if draft.role is Role.AUX:
+            continue
+        if draft.role is None and "role" in draft.invalid:
+            continue
+        if draft.role is not None:
+            bag.add(
+                "IOL305",
+                f"роль {draft.role.value} недопустима для {kind}: у него нет сигналов ввода-вывода",
+                "привязки ФБ (rPv_eu, xPvValid, xTrack, rOutAct_pct) пишет логика станции (контракт 17.3); "
+                "строку устройства оставьте без role, сигнал без ФБ запишите с ролью AUX",
+                source=draft.cell("role"),
+                tag=draft.tag,
+                device=device.name,
+            )
+            continue
+        if draft.signal_type is not None or "signal_type" in draft.invalid:
+            bag.add(
+                "IOL304",
+                f"у сигнала {draft.label} устройства {device.name} ({kind}) не задана роль",
+                f"у {kind} нет сигналов ввода-вывода: строка устройства — без signal_type и role, "
+                "сигнал без ФБ — с ролью AUX",
+                source=draft.cell("role"),
+                tag=draft.tag,
+                device=device.name,
+            )
+            continue
+        if device.main is None:
+            device.main = draft
+            device.has_main_role = True
+            draft.device_row = True
+            continue
+        bag.add(
+            "IOL307",
+            f"у {kind} {device.name} уже есть строка устройства {device.main.label} (строка {device.main.line})",
+            f"у {kind} одна строка устройства без signal_type и role; другие строки — сигналы с ролью AUX",
+            source=draft.cell("signal_type"),
+            related=[device.main.source],
+            tag=draft.tag,
+            device=device.name,
+        )
+    if device.main is not None:
+        return
+    device.main = next((draft for draft in device.signals if draft.device_type is not None), device.signals[0])
+    bag.add(
+        "IOL308",
+        f"у {kind} {device.name} нет строки устройства",
+        f"добавьте строку без signal_type и role: device = {device.name}, device_type = {kind}, dev_no, params",
+        source=device.main.cell("role"),
+        tag=device.main.tag,
+        device=device.name,
+    )
 
 
 def _resolve_main(device: DeviceDraft, spec: DeviceTypeSpec, bag: DiagnosticBag) -> None:

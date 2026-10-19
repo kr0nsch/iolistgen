@@ -14,7 +14,7 @@ import pytest
 
 from iolistgen.diagnostics import RULES, Severity
 from iolistgen.validate import CheckResult, check_file
-from pytests.helpers import COLUMNS, Row, ai, config_from, di, motor_vfd, signal, valve, write_csv
+from pytests.helpers import COLUMNS, Row, ai, config_from, di, motor_vfd, pid, signal, valve, write_csv
 
 
 @dataclass(frozen=True)
@@ -195,6 +195,10 @@ CASES: dict[str, Case] = {
     "IOL210": Case(Scenario(rows=[di(sp_hh=1)]), Scenario(rows=[di()])),
     "IOL211": Case(Scenario(rows=[ai(delay_on_s=2)]), Scenario(rows=[ai(delay_on_s=2, sp_hh=4.5)])),
     "IOL212": Case(Scenario(rows=vfd_with(1, alarm_priority="High")), Scenario(rows=vfd_main(alarm_priority="High"))),
+    "IOL213": Case(
+        Scenario(rows=[pid(range_min="", range_max="")]),
+        Scenario(rows=[pid(range_min="", range_max="", params="rPvMin_eu=0.0; rPvMax_eu=5.0")]),
+    ),
     "IOL301": Case(Scenario(rows=motor(device_type="Pump")), Scenario(rows=motor())),
     "IOL302": Case(Scenario(rows=[ai(device_type="")]), Scenario(rows=[ai()])),
     "IOL303": Case(Scenario(rows=vfd_with(1, device_type="Motor")), Scenario(rows=vfd_with(1, device_type="MotorVfd"))),

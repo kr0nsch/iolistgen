@@ -92,6 +92,21 @@ def di(tag: str = "LS101", dev_no: int | str = 2, **extra: object) -> dict[str, 
     return row
 
 
+def pid(tag: str = "LIC101", dev_no: int | str = 41, **extra: object) -> dict[str, object]:
+    """ПИД-регулятор: строка устройства без типа сигнала и роли, с диапазоном PV — корректная строка."""
+    row: dict[str, object] = {
+        "tag": tag,
+        "description": f"Регулятор {tag}",
+        "device_type": "Pid",
+        "dev_no": dev_no,
+        "range_min": 0,
+        "range_max": 5,
+        "units": "м",
+    }
+    row.update(extra)
+    return row
+
+
 def signal(device: str, suffix: str, role: str, signal_type: str, **extra: object) -> dict[str, object]:
     """Неглавная строка устройства."""
     row: dict[str, object] = {

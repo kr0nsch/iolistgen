@@ -180,6 +180,21 @@ POINTS: dict[DeviceType, tuple[Point, ...]] = {
         Point("AutoActive", "out", "xAutoActive"),
         Point("Cmd.PosSpMan", "cmd", "rPosSpMan_pct"),
     ),
+    DeviceType.PID: (
+        Point("Sp", "sts", "rSp_eu"),
+        Point("SpTarget", "sts", "rSpTarget_eu"),
+        Point("Pv", "sts", "rPv_eu"),
+        Point("Err", "sts", "rErr_pct"),
+        Point("Out", "sts", "rOut_pct"),
+        Point("P", "sts", "rP_pct"),
+        Point("I", "sts", "rI_pct"),
+        Point("D", "sts", "rD_pct"),
+        Point("Dt", "sts", "rDt_ms"),
+        Point("SatHigh", "out", "xSatHigh"),
+        Point("SatLow", "out", "xSatLow"),
+        Point("Cmd.Sp", "cmd", "rSp_eu"),
+        Point("Cmd.ManualOut", "cmd", "rManualOut_pct"),
+    ),
 }
 
 
@@ -364,6 +379,11 @@ class ScadaCsvGenerator:
             "plc_path": plc_path,
             "opcua_node_id": node,
         }
+        if device.device_type is DeviceType.PID and point.path.endswith("_eu"):
+            # задание и PV регулятора — в единицах и диапазоне PV (колонки строки устройства или params)
+            row["units"] = device.units
+            row["eng_min"] = float(device.cfg.value("rPvMin_eu"))
+            row["eng_max"] = float(device.cfg.value("rPvMax_eu"))
         if device.device_type is DeviceType.ANALOG_INPUT and point.name in ("Value", "Cmd.SubstValue"):
             main = device.main
             row["units"] = main.units

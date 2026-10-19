@@ -244,6 +244,23 @@ STRUCTS: dict[str, tuple[StructField, ...]] = {
         _f("wInterlock", "WORD", "действующие блокировки"),
         _f("uiFirstOut", "UINT", "первопричина блокировки; 65535 — нет"),
     ),
+    "ST_PidCmd": (
+        _f("stCommon", "ST_DeviceCmd", "общие команды"),
+        _f("rSp_eu", "REAL", "задание оператора; при внешнем задании ФБ пишет сюда внешнее"),
+        _f("rManualOut_pct", "REAL", "выход в Manual; в Auto, слежении и OOS ФБ пишет сюда текущий выход", units="%"),
+    ),
+    "ST_PidSts": (
+        _f("stCommon", "ST_DeviceSts", "общий заголовок"),
+        _f("rSpTarget_eu", "REAL", "задание после пределов, до рампы"),
+        _f("rSp_eu", "REAL", "действующее задание (после рампы)"),
+        _f("rPv_eu", "REAL", "регулируемая величина"),
+        _f("rErr_pct", "REAL", "ошибка, % диапазона PV, со знаком действия", units="%"),
+        _f("rOut_pct", "REAL", "выход", units="%"),
+        _f("rP_pct", "REAL", "пропорциональная составляющая", units="%"),
+        _f("rI_pct", "REAL", "интегральная составляющая", units="%"),
+        _f("rD_pct", "REAL", "дифференциальная составляющая", units="%"),
+        _f("rDt_ms", "REAL", "последний шаг расчёта", units="мс"),
+    ),
 }
 
 
@@ -374,6 +391,26 @@ FB_INTERFACES: dict[DeviceType, FbInterface] = {
             _f("rOut_mA", "REAL", "выход на AO", "4.0", units="мА"),
             _f("xAutoActive", "BOOL", "клапан следует заданию автоматики"),
             _f("stSts", "ST_ControlValveSts", "состояние для HMI и SCADA"),
+        ),
+    ),
+    # вызов ПИД пишет логика станции (контракт 17.3): генератор входы не привязывает
+    DeviceType.PID: FbInterface(
+        fb="FB_PID",
+        extends="FB_DeviceBase",
+        inputs=(
+            _f("rPv_eu", "REAL", "регулируемая величина"),
+            _f("xPvValid", "BOOL", "PV достоверна; по умолчанию FALSE — забытая привязка видна сразу"),
+            _f("xSpExt", "BOOL", "задание от логики (каскад, график), а не от оператора"),
+            _f("rSpExt_eu", "REAL", "внешнее задание"),
+            _f("xTrack", "BOOL", "слежение: выход := rTrack_pct"),
+            _f("rTrack_pct", "REAL", "значение для слежения", units="%"),
+            _f("rOutAct_pct", "REAL", "фактический выход механизма (при stCfg.xUseOutAct)", units="%"),
+        ),
+        outputs=(
+            _f("rOut_pct", "REAL", "выход", units="%"),
+            _f("xSatHigh", "BOOL", "выход на верхнем пределе rOutMax_pct"),
+            _f("xSatLow", "BOOL", "выход на нижнем пределе rOutMin_pct"),
+            _f("stSts", "ST_PidSts", "состояние для HMI и SCADA"),
         ),
     ),
 }

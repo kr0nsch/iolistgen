@@ -503,6 +503,7 @@ CHECKS: dict[str, tuple[str, Callable[[Library], Problems]]] = {
     "cmd_sts_retain": ("структуры Cmd, Sts, Retain", check_fb_structs),
     "fb": ("ФБ устройств", check_fb_interfaces),
     "constants": ("константы GVL_Const", check_constants),
+    "coverage": ("полнота каталога", check_coverage),
     "stub": ("заглушка", lambda lib: check_stub(lib, scan(STUB_DIR))),
 }
 

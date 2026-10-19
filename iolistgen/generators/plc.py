@@ -225,6 +225,8 @@ class DeviceBinding:
     inputs: tuple[Pin, ...]
     outputs: tuple[OutAssign, ...]
     notes: tuple[str, ...] = ()
+    called: bool = True
+    """Вызов в ``PRG_Devices``; ``False`` — устройство без сигналов (Pid): его вызывает логика станции."""
 
     @property
     def fb_type(self) -> str:
@@ -581,6 +583,8 @@ class _Builder:
             notes.append(
                 f"ПЧ: xCommOk, xVfd*, rSpeedAct_pct и rSpeedRef_pct — через адаптер приложения ({GVL_IO}.x{d}_…)"
             )
+        if not device.spec.has_io:
+            return self._station_binding(device, aux_notes)
         notes += aux_notes
         ordered = [pins[spec.name] for spec in fb_inputs(device.device_type) if spec.name in pins]
         unknown = sorted(set(pins) - {spec.name for spec in fb_inputs(device.device_type)})
@@ -607,6 +611,33 @@ class _Builder:
             inputs=tuple(ordered + in_out),
             outputs=tuple(outputs),
             notes=tuple(notes),
+        )
+
+    def _station_binding(self, device: Device, aux_notes: list[str]) -> DeviceBinding:
+        """Устройство без сигналов (Pid): имена есть, вызова в PRG_Devices нет — его пишет логика станции."""
+        d = device.ident
+        retain = f"st{d}Retain" if device.spec.has_retain else None
+        in_out = [Pin("stCmd", f"{GVL_HMI}.st{d}Cmd"), Pin("stCfg", f"{GVL_PERSIST}.st{d}Cfg")]
+        if retain is not None:
+            in_out.append(Pin("stRetain", f"{GVL_PERSIST}.{retain}"))
+        if self.time_source:
+            in_out.append(Pin("itfTime", self.time_source, "источник времени"))
+        notes = [
+            f"вызов {device.spec.fb} пишет логика станции до {PRG_DEVICES} (контракт plc-process-lib 17.3): "
+            "входы rPv_eu, xPvValid, xTrack, rOutAct_pct и параметры ниже",
+            *aux_notes,
+        ]
+        return DeviceBinding(
+            device=device,
+            namespace=self.namespace,
+            instance=f"fb{d}",
+            cmd=f"st{d}Cmd",
+            cfg=f"st{d}Cfg",
+            retain=retain,
+            inputs=tuple(in_out),
+            outputs=(),
+            notes=tuple(notes),
+            called=False,
         )
 
     def _input_expr(self, var: IoVar, pin: str) -> str:

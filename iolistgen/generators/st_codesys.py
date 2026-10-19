@@ -313,6 +313,11 @@ class StCodesysGenerator:
             f"команды {GVL_HMI}, Cfg и Retain — {GVL_PERSIST} (контракт plc-process-lib, разделы 1 и 20). "
             "Входы автоматики (xAutoRun, xAutoOpen, wInterlock, wPermit…, rSpeedSpAuto_pct, rPosSpAuto_pct) пишет "
             f"логика станции до вызова {PRG_DEVICES}"
+            + (
+                "; ПИД-регуляторы (тип Pid) без сигналов ввода-вывода вызывает логика станции (контракт 17.3)"
+                if any(not binding.called for binding in plc.devices)
+                else ""
+            )
         )
 
     def _prg_devices(self, plc: PlcModel, ctx: GeneratorContext) -> dict[str, Any]:
@@ -335,6 +340,10 @@ class StCodesysGenerator:
             title = _title_lines(_device_title(binding), indent="")
             for note in binding.notes:
                 title += stfmt.comment_lines(note)
+            if not binding.called:  # устройство без сигналов (Pid): вызов — в логике станции, здесь образец
+                sample = [f"// {line}" for line in stfmt.call(binding.instance_path, binding.inputs)]
+                devices.append({"title": title, "call": sample, "outputs": []})
+                continue
             devices.append(
                 {
                     "title": title,

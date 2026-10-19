@@ -12,6 +12,7 @@
   аналоговое задание (AO) и фактическая частота (AI);
 - Valve: задвижка (открыть/закрыть, концевики, муфты) и клапан с соленоидом;
 - ControlValve: выход 4–20 мА и ОС положения отдельным AnalogInput (``link_fb``);
+- Pid: строка устройства без сигнала (регулятор уровня; вызов ФБ пишет логика станции);
 - сигналы без ФБ (роль AUX): лампа на щите отдельной строкой и регистр кода аварии ПЧ в
   составе насоса.
 
@@ -37,6 +38,8 @@ from pathlib import Path
 
 SEED = 2026
 COUNT = 300
+# Номера ПИД-регуляторов — отдельный диапазон: строка без сигнала не сдвигает номера остальных устройств
+PID_DEV_NO_BASE = 9000
 DEFAULT_OUT = Path(__file__).resolve().parent / "io_list_300.csv"
 
 COLUMNS: tuple[str, ...] = (
@@ -160,6 +163,7 @@ class Plant:
     next_sensor_slave: int = 10
     gateway_regs: dict[str, int] = field(default_factory=dict)
     gateway_bit: tuple[int, int] = (-1, 16)
+    pid_dev_no: int = PID_DEV_NO_BASE
     full: bool = False  # участок покрытия: все необязательные строки устройств включены
 
     # --- служебное ------------------------------------------------------------------------------
@@ -666,6 +670,23 @@ class Plant:
         )
         return count + 1
 
+    def pid_loop(self, tag: str, area: str) -> int:
+        """ПИД-регулятор: строка устройства без сигнала, номер — из отдельного диапазона (сигналов 0)."""
+        dev = f"LIC{tag}"
+        self.pid_dev_no += 1
+        self.add(
+            tag=dev,
+            description=f"Регулятор уровня {dev}: частота насосов участка",
+            device_type="Pid",
+            dev_no=str(self.pid_dev_no),
+            range_min="0",
+            range_max="5",
+            units="м",
+            hmi_group=area,
+            params="eAction=Direct; rKp=2.0; rTi_s=120.0; rSpMin_eu=0.5; rSpMax_eu=4.0",
+        )
+        return 0
+
 
 # Позиция — номер участка · 100 + порядковый номер: не больше 4 цифр (правило тегов по умолчанию)
 MAX_BASE = 9800
@@ -696,6 +717,7 @@ def coverage_area(plant: Plant, area: str, base: int) -> int:
     count += plant.solenoid_valve(str(next(seq)), area)
     count += plant.control_valve(str(next(seq)), area)
     count += plant.lamp(str(next(seq)), area)
+    count += plant.pid_loop(str(next(seq)), area)
     plant.full = False
     return count
 
@@ -793,7 +815,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     rows = generate(args.seed, args.count)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_bytes(render_csv(rows).encode("utf-8"))
-    sys.stdout.write(f"{args.out}: {len(rows)} сигналов, зерно {args.seed}\n")
+    signals = sum(1 for row in rows if row["signal_type"])  # строка ПИД-регулятора — не сигнал
+    sys.stdout.write(f"{args.out}: {signals} сигналов, строк {len(rows)}, зерно {args.seed}\n")
     return 0
 
 

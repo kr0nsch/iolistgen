@@ -127,6 +127,8 @@ class SignalDraft:
     params: list[ParamText] = field(default_factory=list)
     invalid: set[str] = field(default_factory=set)
     duplicate: bool = False
+    device_row: bool = False
+    """Строка устройства без сигнала (Pid): ни переменной GVL_IO, ни привязки к ФБ у неё нет."""
 
     @property
     def source(self) -> SourceRef:

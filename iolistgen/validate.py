@@ -108,7 +108,7 @@ def _stats(drafts: list[SignalDraft], devices: list[DeviceDraft], addresses: dic
     signal_types = Counter(d.signal_type.value for d in drafts if d.signal_type is not None)
     device_types = Counter(d.device_type.value for d in devices if d.device_type is not None)
     return Stats(
-        signals=len(drafts),
+        signals=len([draft for draft in drafts if not draft.device_row]),
         devices=len([device for device in devices if not device.plain]),
         modbus=len(addresses),
         by_signal_type=dict(sorted(signal_types.items())),
@@ -134,9 +134,11 @@ def _build_model(
             continue
         main = device.main
         assert main is not None and device.device_type is not None and device.dev_no is not None
-        assert device.cfg is not None and main.role is not None
+        assert device.cfg is not None and (main.role is not None or main.device_row)
         signals: list[Signal] = []
         for draft in device.signals:
+            if draft.device_row:
+                continue  # строка устройства без сигнала (Pid): переменной GVL_IO у неё нет
             signal = _signal(draft, device.ident, is_main=draft is main, address=addresses.get(id(draft)))
             signals.append(signal)
             signals_by_id[id(draft)] = signal
@@ -151,6 +153,9 @@ def _build_model(
                 description=main.dev_desc or main.description or device.name,
                 main_role=main.role,
                 signals=tuple(signals),
+                units=main.units,
+                range_min=main.range_min,
+                range_max=main.range_max,
                 setpoints=Setpoints(
                     hh=main.setpoints.get("hh"),
                     h=main.setpoints.get("h"),

@@ -38,7 +38,11 @@ _SIGNAL_TITLES = {
 
 
 class DeviceType(str, Enum):
-    """Тип устройства — функциональный блок библиотеки plc-process-lib (namespace ``PL``)."""
+    """Тип устройства — функциональный блок библиотеки plc-process-lib (namespace ``PL``).
+
+    ``PID`` — регулятор без сигналов ввода-вывода: в перечне это строка устройства без типа
+    сигнала и роли, привязки ФБ пишет логика станции (контракт 17.3, 18.3, правило 9).
+    """
 
     ANALOG_INPUT = "AnalogInput"
     DIGITAL_INPUT = "DigitalInput"
@@ -46,6 +50,7 @@ class DeviceType(str, Enum):
     MOTOR_VFD = "MotorVfd"
     VALVE = "Valve"
     CONTROL_VALVE = "ControlValve"
+    PID = "Pid"
 
 
 class Role(str, Enum):

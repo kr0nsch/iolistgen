@@ -20,6 +20,10 @@ from iolistgen.build import DeviceDraft
 from iolistgen.catalog import (
     AI_LOWCUT_MAX_PCT,
     ALARM_ID_STEP,
+    PCT_FULL,
+    PID_DEADBAND_MAX_PCT,
+    PID_DFILTER_N_MAX,
+    PID_DFILTER_N_MIN,
     STARTS_WINDOW_MAX,
     LeafField,
     PathError,
@@ -154,6 +158,10 @@ class CfgBuilder:
                 self.set_column("tTravel", delay_on, "delay_on_s")
         elif device_type is DeviceType.CONTROL_VALVE and delay_on is not None:
             self.set_column("tDev", delay_on, "delay_on_s")
+        elif device_type is DeviceType.PID and _valid_range(head.range_min, head.range_max):
+            assert head.range_min is not None and head.range_max is not None
+            self.set_column("rPvMin_eu", head.range_min, "range_min")
+            self.set_column("rPvMax_eu", head.range_max, "range_max")
         if head.alarm_priority is not None:
             self._apply_priority(head.alarm_priority)
 
@@ -282,6 +290,7 @@ class CfgBuilder:
             DeviceType.MOTOR_VFD: self._infer_motor,
             DeviceType.VALVE: self._infer_valve,
             DeviceType.CONTROL_VALVE: self._infer_control_valve,
+            DeviceType.PID: self._infer_pid,
         }
         handler = handlers.get(self.spec.device_type)
         if handler is not None:
@@ -417,6 +426,23 @@ class CfgBuilder:
                 "xFbUsed",
             )
 
+    def _infer_pid(self) -> None:
+        pv_min, pv_max = self.entries["rPvMin_eu"], self.entries["rPvMax_eu"]
+        if pv_min.origin == "column" and pv_max.origin == "column":
+            # пределы задания по умолчанию — диапазон PV: задание вне шкалы датчика бессмысленно
+            note = "пределы задания — диапазон PV (range_min…range_max)"
+            self.set_inferred("rSpMin_eu", pv_min.value, note)
+            self.set_inferred("rSpMax_eu", pv_max.value, note)
+            return
+        if pv_min.origin == "default" and pv_max.origin == "default":
+            self.report(
+                "IOL213",
+                f"у {self.device.name} не задан диапазон PV: ошибка регулятора нормируется по 0…100",
+                "укажите range_min и range_max — диапазон датчика PV в инженерных единицах (как у его "
+                "AnalogInput) — или rPvMin_eu и rPvMax_eu в params",
+                "rPvMin_eu",
+            )
+
     # --- зеркало CheckConfig -------------------------------------------------------------------
 
     def check_config(self) -> None:
@@ -426,6 +452,7 @@ class CfgBuilder:
             DeviceType.MOTOR_VFD: self._check_motor,
             DeviceType.VALVE: self._check_valve,
             DeviceType.CONTROL_VALVE: self._check_control_valve,
+            DeviceType.PID: self._check_pid,
         }
         check = checks.get(self.spec.device_type)
         if check is not None:
@@ -623,6 +650,89 @@ class CfgBuilder:
                 "порог не меньше 0 и меньше rOutMax_pct",
                 "rTightShut_pct",
             )
+
+    def _check_pid(self) -> None:
+        """Зеркало FB_PID.CheckConfig (контракт 17.6); перечисления проверяет разбор литералов."""
+        if self._real("rKp") <= 0:
+            self._fail("PID_CFG_KP", f"rKp = {format_real(self._real('rKp'))}", "коэффициент усиления больше 0", "rKp")
+        for path in ("rTi_s", "rTd_s"):
+            if self._real(path) < 0:
+                self._fail("PID_CFG_TI_TD", f"{path} = {format_real(self._real(path))} < 0", "не меньше 0", path)
+        n_filter = self._real("rDFilterN")
+        if self._real("rTd_s") > 0 and not PID_DFILTER_N_MIN <= n_filter <= PID_DFILTER_N_MAX:
+            self._fail(
+                "PID_CFG_DFILTER",
+                f"rDFilterN = {format_real(n_filter)} вне {format_real(PID_DFILTER_N_MIN)}…"
+                f"{format_real(PID_DFILTER_N_MAX)} при rTd_s > 0",
+                f"фильтр Д: N от {format_real(PID_DFILTER_N_MIN)} до {format_real(PID_DFILTER_N_MAX)}",
+                "rDFilterN",
+                "rTd_s",
+            )
+        if self._real("rTt_s") < 0:
+            self._fail("PID_CFG_TT", f"rTt_s = {format_real(self._real('rTt_s'))} < 0", "0 — авто, иначе > 0", "rTt_s")
+        pv_min, pv_max = self._real("rPvMin_eu"), self._real("rPvMax_eu")
+        if pv_min >= pv_max:
+            self._fail(
+                "PID_CFG_PV_RANGE",
+                f"диапазон PV {format_real(pv_min)}…{format_real(pv_max)}",
+                "rPvMin_eu меньше rPvMax_eu (колонки range_min и range_max)",
+                "rPvMin_eu",
+                "rPvMax_eu",
+            )
+        sp_min, sp_max = self._real("rSpMin_eu"), self._real("rSpMax_eu")
+        if sp_min > sp_max:
+            self._fail(
+                "PID_CFG_SP_RANGE",
+                f"пределы задания {format_real(sp_min)}…{format_real(sp_max)}",
+                "rSpMin_eu не больше rSpMax_eu (равные — фиксированное задание)",
+                "rSpMin_eu",
+                "rSpMax_eu",
+            )
+        out_min, out_max = self._real("rOutMin_pct"), self._real("rOutMax_pct")
+        if out_min < 0 or out_max > PCT_FULL or out_min >= out_max:
+            self._fail(
+                "PID_CFG_OUT_RANGE",
+                f"пределы выхода {format_real(out_min)}…{format_real(out_max)} %",
+                "нужно 0 <= rOutMin_pct < rOutMax_pct <= 100",
+                "rOutMin_pct",
+                "rOutMax_pct",
+            )
+        deadband = self._real("rDeadband_pct")
+        if not 0 <= deadband <= PID_DEADBAND_MAX_PCT:
+            self._fail(
+                "PID_CFG_DEADBAND",
+                f"зона нечувствительности rDeadband_pct = {format_real(deadband)} вне "
+                f"0…{format_real(PID_DEADBAND_MAX_PCT)} %",
+                f"укажите 0…{format_real(PID_DEADBAND_MAX_PCT)} % диапазона PV",
+                "rDeadband_pct",
+            )
+        for path in ("rSpRate_ups", "rOutRate_pctps"):
+            if self._real(path) < 0:
+                self._fail(
+                    "PID_CFG_RATES", f"{path} = {format_real(self._real(path))} < 0", "0 — без ограничения", path
+                )
+        sample, dt_max = self._time("tSample"), self._time("tDtMax")
+        if dt_max == 0 or sample >= dt_max:
+            self._fail(
+                "PID_CFG_SAMPLE",
+                f"период расчёта tSample = {format_time(sample)}, предел шага tDtMax = {format_time(dt_max)}",
+                "tDtMax больше 0 и больше tSample",
+                "tSample",
+                "tDtMax",
+            )
+        safe = self._real("rSafeOut_pct")
+        if not out_min <= safe <= out_max:
+            self._fail(
+                "PID_CFG_PV_FAIL",
+                f"безопасный выход rSafeOut_pct = {format_real(safe)} вне пределов выхода "
+                f"{format_real(out_min)}…{format_real(out_max)} %",
+                "rSafeOut_pct — внутри rOutMin_pct…rOutMax_pct (проверяется при любом ePvFailAction)",
+                "rSafeOut_pct",
+            )
+
+
+def _valid_range(low: float | None, high: float | None) -> bool:
+    return low is not None and high is not None and low < high
 
 
 def build_device_cfg(

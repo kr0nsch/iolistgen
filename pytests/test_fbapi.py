@@ -16,6 +16,7 @@ STS_SIZES = {
     "ST_MotorSts": 68,
     "ST_ValveSts": 52,
     "ST_ControlValveSts": 52,
+    "ST_PidSts": 64,
 }
 
 

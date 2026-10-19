@@ -176,10 +176,11 @@ def _check_range(device: DeviceDraft, draft: SignalDraft, bag: DiagnosticBag) ->
         return
     if low is not None and high is not None:
         if low >= high:
+            bit = "PID_CFG_PV_RANGE" if draft.device_row else "AI_CFG_RANGE"
             bag.add(
                 "IOL204",
                 f"диапазон {_num(low)}…{_num(high)}: минимум не меньше максимума",
-                "задайте range_min меньше range_max (иначе ФБ отклонит Cfg: AI_CFG_RANGE)",
+                f"задайте range_min меньше range_max (иначе ФБ отклонит Cfg: {bit})",
                 source=draft.cell("range_min"),
                 related=[draft.cell("range_max")],
                 tag=draft.tag,
@@ -291,11 +292,25 @@ def _check_delays(device: DeviceDraft, bag: DiagnosticBag) -> None:
                     tag=head.tag,
                     device=device.name,
                 )
-    if spec.delay_off is None and head.has("delay_off_s") and "delay_off_s" not in head.invalid:
+    if spec.delay_on is None and head.has("delay_on_s") and "delay_on_s" not in head.invalid:
         bag.add(
             "IOL211",
-            f"у {spec.device_type.value} нет задержки отключения",
-            f"задержка включения задаёт {spec.delay_on}; очистите колонку delay_off_s",
+            f"у {spec.device_type.value} нет задержек",
+            "задержки перечня этому типу устройства не применяются; очистите колонки delay_on_s и delay_off_s",
+            source=head.cell("delay_on_s"),
+            tag=head.tag,
+            device=device.name,
+        )
+    if spec.delay_off is None and head.has("delay_off_s") and "delay_off_s" not in head.invalid:
+        no_delays = spec.delay_on is None
+        bag.add(
+            "IOL211",
+            f"у {spec.device_type.value} нет задержки отключения"
+            if not no_delays
+            else f"у {spec.device_type.value} нет задержек",
+            f"задержка включения задаёт {spec.delay_on}; очистите колонку delay_off_s"
+            if not no_delays
+            else "задержки перечня этому типу устройства не применяются; очистите колонку delay_off_s",
             source=head.cell("delay_off_s"),
             tag=head.tag,
             device=device.name,
@@ -357,11 +372,12 @@ def _check_modbus_row(
 ) -> ModbusAddress | None:
     mb = draft.modbus
     if draft.signal_type is not SignalType.MB:
-        if mb.present and draft.signal_type is not None:
+        if mb.present and (draft.signal_type is not None or draft.device_row):
             name = next(name for name in _MB_FIELDS if name in mb.present)
+            what = f"сигнала {draft.signal_type.value}" if draft.signal_type is not None else "строки устройства"
             bag.add(
                 "IOL402",
-                f"у сигнала {draft.signal_type.value} {draft.label} заполнен адрес Modbus — он не используется",
+                f"у {what} {draft.label} заполнен адрес Modbus — он не используется",
                 "адрес Modbus задаётся только у сигналов MB: очистите колонки mb_* или смените тип сигнала",
                 source=draft.cell(name),
                 tag=draft.tag,
@@ -648,7 +664,18 @@ def check_channels(drafts: Sequence[SignalDraft], bag: DiagnosticBag) -> None:
     seen: dict[tuple[str, SignalType, int], SignalDraft] = {}
     for draft in drafts:
         has_module, has_channel = draft.has("io_module"), draft.has("io_channel")
-        if not (has_module or has_channel) or draft.signal_type is None:
+        if not (has_module or has_channel):
+            continue
+        if draft.device_row:
+            bag.add(
+                "IOL603",
+                f"у строки устройства {draft.label} заполнены модуль или канал — они не используются",
+                "у устройства без сигналов ввода-вывода (Pid) каналов нет: очистите io_module и io_channel",
+                source=draft.cell("io_module" if has_module else "io_channel"),
+                tag=draft.tag,
+            )
+            continue
+        if draft.signal_type is None:
             continue
         if draft.signal_type is SignalType.MB:
             bag.add(

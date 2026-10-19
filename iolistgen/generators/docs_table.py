@@ -50,9 +50,14 @@ def signal_address(signal: Signal) -> str:
 def device_summary(device: Device) -> str:
     """Строка под заголовком устройства: тип, номер, уставки, задержки."""
     parts = [f"{device.device_type.value}, № {device.dev_no}, `{LIBRARY_NAMESPACE}.{device.spec.fb}`"]
+    if not device.spec.has_io:
+        parts.append("сигналов ввода-вывода нет: вызов ФБ — в логике станции")
+        if device.range_min is not None and device.range_max is not None:
+            units = f" {device.units}" if device.units else ""
+            parts.append(f"диапазон PV {_number(device.range_min)}…{_number(device.range_max)}{units}")
     defined = device.setpoints.defined()
     if defined:
-        units = device.main.units or ""
+        units = device.units or ""
         values = " · ".join(f"{name} {_number(value)}" for name, value in defined)
         parts.append(f"уставки: {values}{(' ' + units) if units else ''}")
     if device.delay_on_ms is not None:
@@ -113,8 +118,9 @@ class DocsTableGenerator:
         if ctx.bool_option("group_by_device"):
             for device in model.devices_by_dev_no():
                 lines += [f"### `{device.ident}` — {md_cell(device.description)}", "", device_summary(device), ""]
-                lines += self._table(device.signals, with_device=False, plc=plc)
-                lines.append("")
+                if device.signals:
+                    lines += self._table(device.signals, with_device=False, plc=plc)
+                    lines.append("")
             plain = model.plain_signals()
             if plain:
                 lines += [
