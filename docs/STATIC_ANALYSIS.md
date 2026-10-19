@@ -15,15 +15,24 @@
 |---|---|---|---|
 | `tools/check/st_lint.py --strict` | локально и в CI | `src/`, `tests/` | вывод в консоль, код выхода ≠ 0 при нарушениях |
 | `tools/check/run_iec_checker.py --tests` | локально и в CI (обязательно): бинарник iec_checker v0.4 из релизов github.com/jubnzv/iec-checker | `build/assembled/iec-checker/` (вариант сборки `iec-checker`) | `build/iec_checker.json`, `build/iec_checker.md` |
-| то же с `--docker` | CI, необязательное задание: образ `jubnzv1/iec-checker:nightly`, закреплённый по дайджесту в `ci.yml` | то же | то же, артефакт `iec-checker-nightly-reports` |
+| то же с `--docker` | CI, необязательное задание: образ `jubnzv1/iec-checker:nightly`, закреплённый по дайджесту в `ci.yml`; обоснования — записи без ключа `checker` и с `checker = "nightly"` | то же | то же, артефакт `iec-checker-nightly-reports` |
 | `tests_support/check_generated_st.py --repo` | локально и в CI (необязательное задание): st_lint, сборка раскладки и RuSTy `plc --check` | `src/` репозитория вместе с заглушкой `tests_support/pl_stub/` | `build/st_check/repo_src/rusty/` |
 | `tests_support/check_generated_st.py` | то же | ST, сгенерированный по перечням примеров и тестов (4 случая) | `build/st_check/<случай>/` |
 
 Обоснования в `tools/check/iec_checker_allow.toml` подобраны под находки v0.4 — той же версии, что в
 обязательном шаге CI. Образ `nightly` разбирает больше конструкций и может находить иначе: если
-находка есть только в одной версии — укажите это в столбце «решение». Интеграционный тест
-`tools/tests/test_run_iec_checker.py::test_integration_repository_sources` проверяет, что каждое
-обоснование используется: после правок `src/` или перегенерации уберите устаревшие записи.
+находка есть только в одной версии — укажите это в столбце «решение», а запись пометьте ключом
+`checker` (`"nightly"` или `"v0.4"`): такая запись применяется только при прогоне своей версией.
+Интеграционный тест `tools/tests/test_run_iec_checker.py::test_integration_repository_sources` (v0.4)
+проверяет, что каждое обоснование, кроме записей `checker = "nightly"`, используется: после правок
+`src/` или перегенерации уберите устаревшие записи.
+
+Записей `checker = "v0.4"` пока нет. Кандидат — `CheckCfg` (строка в таблице тестов ниже): образ
+`nightly` обращение к полю структуры считает использованием (исправление UnusedVariable в iec-checker
+от 2026-04-16), поэтому `stCommon` он не выдаст. Но в аргументы вложенного вызова функции его обход
+выражений не заходит (`ExprFuncCall` в `filter_exprs`, `src/core/ast_util.ml`), и `sDevice` из
+`CONCAT(sDevice, …)` останется находкой — запись ему нужна. Это вывод по исходникам iec-checker, сам
+образ локально не запускался (Docker не установлен): подтвердить первым прогоном CI.
 
 ## Последний прогон
 
@@ -53,7 +62,7 @@
 | Правило | Файл | Находка | Решение / обоснование |
 |---|---|---|---|
 | UnusedVariable | `FB_ProjectCfg_Test`: константы набора `W_NO_ERRORS`, `T_MIN_STOP_PROJECT`, … `R_EXACT` (11) | «Found unused local variable» | Артефакт понижения: константы набора (`VAR CONSTANT`) используются в методах-тестах, которые сборка выносит в отдельные функции |
-| UnusedVariable | `FB_ProjectCfg_Test.CheckCfg`: `sDevice`, `stCommon` | то же | Ложное срабатывание: вход используется в `CONCAT(sDevice, …)`, структура — чтением полей `stCommon.wCfgErr` и `stCommon.wStatus`; обращения к полям iec_checker 0.4 использованием не считает |
+| UnusedVariable | `FB_ProjectCfg_Test.CheckCfg`: `sDevice`, `stCommon` | то же | Ложное срабатывание: вход используется в `CONCAT(sDevice, …)`, структура — чтением полей `stCommon.wCfgErr` и `stCommon.wStatus`; обращения к полям iec_checker 0.4 использованием не считает. Для образа `nightly` ожидается только `sDevice` (выше, «Как запускается»), поэтому запись — без ключа `checker` |
 | UnusedVariable | `PRG_Tests`: `fbProjectCfgTest` | то же | Ложное срабатывание: экземпляр используется вызовом `AreAllTestsFinished()` и регистрируется в coUnit самим объявлением |
 | PLCOPEN-CP9 | `FB_ProjectCfg_Test` и его методы (6) | «Code is too complex», «… statements» | Обосновано: в наборе и методах-тестах нет ветвлений (классическая сложность — 1), это последовательности вызовов и проверок — 30 проверок Cfg устройств подряд; для тестов метрика не показательна |
 | PLCOPEN-CP3 | `FB_ProjectCfg_Test`, `PRG_Tests` (4) | как выше | Обосновано, как для `src/` |
