@@ -672,7 +672,7 @@ device_regex = ^[A-Z]{1,4}[0-9]{1,4}[A-Z]?$
 ## 10. Примеры
 
 Ниже — фрагменты перечня в виде таблиц; пустые колонки опущены. Полные примеры —
-[`examples/kns/io_list.csv`](../examples/kns/README.md) (вымышленная КНС-1 проекта 02:
+[`examples/kns/io_list.csv`](../examples/kns/README.md) (вымышленная КНС-1 проекта kns-pump-station:
 58 сигналов, 30 устройств, CSV и XLSX), синтетический перечень на 300 сигналов и витрина ошибок —
 в [`examples/`](../examples/README.md); короткий перечень для тестов — `pytests/data/kns_mini.csv`.
 

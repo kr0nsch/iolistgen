@@ -155,5 +155,5 @@ CODESYS 3.5.17.30 ([README, «Тесты и качество»](../README.md#т�
 Объект Persistent Variables скрипт CODESYS 3.5.17 не создаёт — его один раз создаёт
 `tools_project/codesys_pvl.py`, дальше текст обновляет `cds.py import`
 ([MANUAL_STEPS.md](MANUAL_STEPS.md#93-импорт-в-проект-и-persistent-variables)). Дерева устройств
-ввода-вывода, Modbus, адаптеров ПЧ и логики станции здесь нет: это проект 02, генератор пишет только
+ввода-вывода, Modbus, адаптеров ПЧ и логики станции здесь нет: это проект kns-pump-station, генератор пишет только
 свои файлы.
