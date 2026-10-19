@@ -8,9 +8,13 @@ plc-process-lib и отрицательный контроль: намеренн
 from __future__ import annotations
 
 import shutil
+import sys
 from pathlib import Path
 
 import pytest
+
+if sys.version_info < (3, 11):
+    pytest.skip("инструменты шаблона (st_lint, run_rusty) требуют Python 3.11+", allow_module_level=True)
 
 import run_rusty
 from tests_support import check_generated_st as harness

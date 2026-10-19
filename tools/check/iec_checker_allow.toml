@@ -63,3 +63,15 @@ id = "UnusedVariable"
 file = "tests/POUs/*_Test/*_Test.decl.st"
 match = "variable: [A-Z][A-Z0-9]*(_[A-Z0-9]+)+$"
 reason = "Артефакт понижения: константы набора (VAR CONSTANT, UPPER_SNAKE_CASE) используются в методах-тестах, которые сборка выносит в отдельные функции"
+
+# =====================================================================================================
+# Только образ nightly (checker = "nightly"): правило PLCOPEN-CP17 «неиспользуемый параметр». В v0.4
+# этого правила нет; находка проверена по исходникам, дефекта нет
+# =====================================================================================================
+
+[[allow]]
+id = "PLCOPEN-CP17"
+file = "tests/POUs/FB_ProjectCfg_Test/CheckCfg.method.decl.st"
+checker = "nightly"
+match = "parameter 'STCOMMON'"
+reason = "Ложное срабатывание CP17: VAR_IN_OUT CONSTANT stCommon читается через поля (stCommon.wCfgErr, stCommon.wStatus); обращение к полям CP17 не считает чтением"
