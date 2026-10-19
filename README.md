@@ -295,7 +295,7 @@ python tests_support/check_library.py           # каталог против и
 примеру контракта 17.3, задание оператора в `GVL_Persist`, вызов `PRG_Devices`. Библиотека
 закреплена в `tools/codesys/config.json`: `plc-process-lib, 1.0.0.0 (plc-portfolio)`, при отсутствии
 `cds.py` собирает её в соседнем репозитории (`build_from_repo`). Проверено 19.10.2026 в CODESYS
-3.5.17.30 и CODESYS Control Win V3 на коммите `bd9bc16` (после него в `src/` и `tests/` менялась только
+3.5.17.30 и CODESYS Control Win V3 на коммите `ab0f622` (после него в `src/` и `tests/` менялась только
 строка «Автор» в заголовках `PRG_Main` и тестов):
 
 | Команда | Итог |
