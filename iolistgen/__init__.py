@@ -22,7 +22,7 @@ from iolistgen.loaders import InputError
 from iolistgen.model import Device, IoList, Signal
 from iolistgen.validate import CheckResult, check_file
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "RULES",
