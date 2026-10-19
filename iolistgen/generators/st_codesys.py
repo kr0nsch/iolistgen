@@ -7,7 +7,7 @@
 - ``GVL_DevIdx.gvl.st`` — константы ``<DEV> : UINT := dev_no``;
 - ``GVL_Hmi.gvl.st`` — ``st<DEV>Cmd`` и команда «применить уставки проекта»;
 - ``GVL_Persist.pvl.st`` — объект Persistent Variables: ``st<DEV>Cfg`` с уставками перечня и
-  ``st<DEV>Retain`` по возрастанию dev_no;
+  ``st<DEV>Retain`` по возрастанию dev_no, затем данные приложения из файла ``persist_extra``;
 - ``GVL_CfgProject.gvl.st`` — те же Cfg константами («уставки проекта»);
 - ``GVL_Devices.gvl.st`` — экземпляры ``fb<DEV> : PL.FB_<Type>``;
 - ``src/POUs/Generated/PRG_Devices/`` — вызовы устройств с привязками к ``GVL_IO``;
@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -28,7 +29,8 @@ from jinja2 import Environment
 
 from iolistgen.catalog import LIBRARY_NAMESPACE
 from iolistgen.generators import stfmt
-from iolistgen.generators.base import GeneratorContext, GeneratorOption
+from iolistgen.generators.base import GenerationError, GeneratorContext, GeneratorOption
+from iolistgen.generators.persist_extra import ExtraVar, load_persist_extra
 from iolistgen.generators.plc import (
     APPLY_CFG_CMD,
     GVL_CFG_PROJECT,
@@ -107,6 +109,13 @@ class StCodesysGenerator:
             "persist_check", "сверить новый GVL_Persist с предыдущим в каталоге вывода (контракт 18.3)", "bool", True
         ),
         GeneratorOption(
+            "persist_extra",
+            "файл данных приложения для GVL_Persist: «имя : тип := значение; // комментарий» по строке, "
+            "дописываются после устройств (контракт 18.3, правило 9); пусто — нет",
+            "path",
+            "",
+        ),
+        GeneratorOption(
             "doc", "документ в заголовках POU (правило STL001: путь docs/...)", "str", "docs/signal_list.md"
         ),
         GeneratorOption(
@@ -123,17 +132,39 @@ class StCodesysGenerator:
         )
         env = environment(ctx.str_option("template_dir"))
         header = stfmt.normalize(ctx.comment_header("st")).rstrip("\n")
-        texts = self.render(model, plc, ctx, header, env)
+        extras = self.persist_extra(ctx, plc)
+        texts = self.render(model, plc, ctx, header, env, extras)
         written: list[Path] = []
         persist_path = self._relative(ctx, f"GVLs/{GVL_PERSIST}.pvl.st")
         if ctx.bool_option("persist_check"):
             previous = out_dir / persist_path
             if previous.is_file():
-                for message in check_persist(previous.read_text(encoding="utf-8"), plc):
+                for message in check_persist(previous.read_text(encoding="utf-8"), plc, extras):
                     ctx.warn(message)
         for relative, text in texts.items():
             written.append(ctx.write_text(self._relative(ctx, relative), stfmt.normalize(text)))
         return written
+
+    @staticmethod
+    def persist_extra(ctx: GeneratorContext, plc: PlcModel) -> tuple[ExtraVar, ...]:
+        """Данные приложения из файла опции ``persist_extra``; имена не совпадают с переменными устройств."""
+        option = ctx.str_option("persist_extra").strip()
+        if not option:
+            return ()
+        extras = load_persist_extra(Path(option))
+        taken = {LAYOUT_VERSION_VAR.casefold(): LAYOUT_VERSION_VAR}
+        for binding in plc.by_dev_no():
+            taken[binding.cfg.casefold()] = binding.cfg
+            if binding.retain is not None:
+                taken[binding.retain.casefold()] = binding.retain
+        for item in extras:
+            clash = taken.get(item.name.casefold())
+            if clash is not None:
+                raise GenerationError(
+                    f"persist_extra {Path(option).name}, строка {item.line}: {item.name} совпадает с переменной "
+                    f"{GVL_PERSIST}.{clash}, которую генератор объявляет сам — переименуйте переменную приложения"
+                )
+        return extras
 
     # --- пути ---------------------------------------------------------------------------------
 
@@ -151,7 +182,13 @@ class StCodesysGenerator:
     # --- тексты ---------------------------------------------------------------------------------
 
     def render(
-        self, model: IoList, plc: PlcModel, ctx: GeneratorContext, header: str, env: Environment
+        self,
+        model: IoList,
+        plc: PlcModel,
+        ctx: GeneratorContext,
+        header: str,
+        env: Environment,
+        extras: tuple[ExtraVar, ...] = (),
     ) -> dict[str, str]:
         """Тексты файлов по путям внутри ``src/`` (без папки проекта)."""
         source = model.source.name
@@ -161,7 +198,10 @@ class StCodesysGenerator:
             f"GVLs/{GVL_IO}.gvl.st": ("st/GVL_IO.gvl.st.j2", {**common, **self._gvl_io(plc)}),
             f"GVLs/{GVL_DEV_IDX}.gvl.st": ("st/GVL_DevIdx.gvl.st.j2", {**common, **self._dev_idx(plc)}),
             f"GVLs/{GVL_HMI}.gvl.st": ("st/GVL_Hmi.gvl.st.j2", {**common, **self._hmi(plc, ctx)}),
-            f"GVLs/{GVL_PERSIST}.pvl.st": ("st/GVL_Persist.pvl.st.j2", {**common, **self._persist(plc, ctx)}),
+            f"GVLs/{GVL_PERSIST}.pvl.st": (
+                "st/GVL_Persist.pvl.st.j2",
+                {**common, **self._persist(plc, ctx, extras)},
+            ),
             f"GVLs/{GVL_CFG_PROJECT}.gvl.st": ("st/GVL_CfgProject.gvl.st.j2", {**common, **self._cfg_project(plc)}),
             f"GVLs/{GVL_DEVICES}.gvl.st": ("st/GVL_Devices.gvl.st.j2", {**common, **self._devices(plc)}),
             f"POUs/{PRG_DEVICES}/{PRG_DEVICES}.decl.st": (
@@ -259,7 +299,7 @@ class StCodesysGenerator:
         )
         return {"purpose": purpose, "lines": lines}
 
-    def _persist(self, plc: PlcModel, ctx: GeneratorContext) -> dict[str, Any]:
+    def _persist(self, plc: PlcModel, ctx: GeneratorContext, extras: tuple[ExtraVar, ...]) -> dict[str, Any]:
         namespace = plc.namespace
         devices = []
         for binding in plc.by_dev_no():
@@ -277,10 +317,19 @@ class StCodesysGenerator:
             "по переменной на устройство, по возрастанию dev_no. Новое устройство — dev_no больше прежних "
             "(переменные встают в конец); типы существующих переменных не меняются. Начальные значения — уставки "
             "перечня; после загрузки действуют сохранённые значения, уставки проекта применяет "
-            f"{PRG_APPLY_CFG}. Объект создаётся в CODESYS вручную (docs/MANUAL_STEPS.md); "
-            "«Reorder List and Clear Gaps» не выполнять."
+            f"{PRG_APPLY_CFG}. "
+            + ("После устройств — данные приложения (persist_extra), новые — в конец. " if extras else "")
+            + "Объект создаётся в CODESYS вручную (docs/MANUAL_STEPS.md); «Reorder List and Clear Gaps» не выполнять."
         )
-        return {"purpose": purpose, "layout_version": "\n".join(version), "devices": devices}
+        extra: dict[str, Any] | None = None
+        if extras:
+            source = Path(ctx.str_option("persist_extra")).name
+            extra_lines: list[str] = []
+            for item in extras:
+                extra_lines += stfmt.declaration(item.name, item.type_text, comment=item.comment)
+            title = _title_lines(f"{EXTRA_TITLE} ({source}): новые — только в конец ---")
+            extra = {"title": title, "lines": extra_lines}
+        return {"purpose": purpose, "layout_version": "\n".join(version), "devices": devices, "extra": extra}
 
     def _cfg_project(self, plc: PlcModel) -> dict[str, Any]:
         namespace = plc.namespace
@@ -370,30 +419,52 @@ class StCodesysGenerator:
 
 # --- сверка с предыдущим GVL_Persist (контракт 18.3, правило 1) ----------------------------------
 
+EXTRA_TITLE = "--- данные приложения, persist_extra"
 _TITLE_RE = re.compile(r"^\s*//\s*---\s*dev_no\s+(\d+):\s*([A-Za-z][A-Za-z0-9_]*)")
+_EXTRA_TITLE_RE = re.compile(r"^\s*//\s*---\s*данные приложения")
 _DECL_RE = re.compile(r"^\s*(st[A-Za-z0-9_]+?(?:Cfg|Retain))\s*:\s*([A-Za-z_][A-Za-z0-9_.]*)")
+_EXTRA_DECL_RE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^:;]+?)\s*(?::=|;)")
 
 
-def _parse_persist(text: str) -> tuple[dict[int, str], dict[str, str]]:
-    """Номера устройств и объявления ``st<DEV>Cfg``/``st<DEV>Retain`` прежнего GVL_Persist."""
-    numbers: dict[int, str] = {}
-    declarations: dict[str, str] = {}
+@dataclass
+class _Persist:
+    """Прежний GVL_Persist: номера устройств, объявления устройств и данные приложения по порядку."""
+
+    numbers: dict[int, str] = field(default_factory=dict)
+    declarations: dict[str, str] = field(default_factory=dict)
+    extras: list[tuple[str, str]] = field(default_factory=list)
+
+
+def _parse_persist(text: str) -> _Persist:
+    """Номера устройств, объявления ``st<DEV>Cfg``/``st<DEV>Retain`` и данные приложения прежнего GVL_Persist."""
+    result = _Persist()
+    in_extras = False
     for line in text.splitlines():
+        if _EXTRA_TITLE_RE.match(line):
+            in_extras = True
+            continue
         title = _TITLE_RE.match(line)
         if title is not None:
-            numbers[int(title.group(1))] = title.group(2)
+            in_extras = False
+            result.numbers[int(title.group(1))] = title.group(2)
+            continue
+        if in_extras:
+            extra = _EXTRA_DECL_RE.match(line)
+            if extra is not None:
+                result.extras.append((extra.group(1), " ".join(extra.group(2).split())))
             continue
         decl = _DECL_RE.match(line)
         if decl is not None:
-            declarations[decl.group(1)] = decl.group(2)
-    return numbers, declarations
+            result.declarations[decl.group(1)] = decl.group(2)
+    return result
 
 
-def check_persist(previous: str, plc: PlcModel) -> list[str]:
+def check_persist(previous: str, plc: PlcModel, extras: tuple[ExtraVar, ...] = ()) -> list[str]:
     """Предупреждения о persistent-данных: смена типа, удаление, переиспользование dev_no, порядок."""
-    old_numbers, old_decls = _parse_persist(previous)
-    if not old_decls:
+    old = _parse_persist(previous)
+    if not old.declarations and not old.extras:
         return []
+    old_decls = {**old.declarations, **dict(old.extras)}
     new_decls: dict[str, str] = {}
     new_numbers: dict[int, str] = {}
     for binding in plc.by_dev_no():
@@ -401,6 +472,7 @@ def check_persist(previous: str, plc: PlcModel) -> list[str]:
         new_decls[binding.cfg] = binding.cfg_type
         if binding.retain is not None:
             new_decls[binding.retain] = binding.retain_type
+    new_decls.update({item.name: item.st_type for item in extras})
     messages: list[str] = []
     old_keys = {name.casefold(): name for name in old_decls}
     for name, st_type in new_decls.items():
@@ -417,7 +489,7 @@ def check_persist(previous: str, plc: PlcModel) -> list[str]:
                 f"{GVL_PERSIST}.{name} удалена: её сохранённые значения пропадут при загрузке "
                 "(для удалённого устройства это ожидаемо)"
             )
-    for number, old_device in sorted(old_numbers.items()):
+    for number, old_device in sorted(old.numbers.items()):
         new_device = new_numbers.get(number)
         if new_device is not None and new_device.casefold() != old_device.casefold():
             messages.append(
@@ -425,13 +497,36 @@ def check_persist(previous: str, plc: PlcModel) -> list[str]:
                 f"переиспользование номера: сохранённые уставки и счётчики {old_device} к {new_device} не "
                 "перейдут (persistent-переменная с другим именем — новая), номера тревог останутся прежними"
             )
-    if old_numbers:
-        last = max(old_numbers)
-        old_devices = {name.casefold() for name in old_numbers.values()}
+    if old.numbers:
+        last = max(old.numbers)
+        old_devices = {name.casefold() for name in old.numbers.values()}
         for number, device in sorted(new_numbers.items()):
             if device.casefold() not in old_devices and number < last:
                 messages.append(
                     f"новое устройство {device} получило dev_no {number}, меньше прежнего наибольшего {last}: "
                     "по правилу 18.3 новые устройства получают номера больше всех прежних и встают в конец списка"
                 )
+    messages += _check_extra_order([name for name, _ in old.extras], [item.name for item in extras])
+    return messages
+
+
+def _check_extra_order(old: list[str], new: list[str]) -> list[str]:
+    """Данные приложения: прежние — в прежнем порядке, новые — только после всех прежних (правило 18.3.1)."""
+    old_keys = {name.casefold() for name in old}
+    new_keys = {name.casefold() for name in new}
+    kept_new = [name for name in new if name.casefold() in old_keys]
+    kept_old = [name for name in old if name.casefold() in new_keys]
+    messages: list[str] = []
+    if [name.casefold() for name in kept_new] != [name.casefold() for name in kept_old]:
+        messages.append(
+            f"{GVL_PERSIST}: порядок данных приложения (persist_extra) изменился: было {', '.join(kept_old)}, "
+            f"стало {', '.join(kept_new)} — прежние переменные не переставляют (контракт 18.3, правило 1)"
+        )
+    last_old = max((index for index, name in enumerate(new) if name.casefold() in old_keys), default=-1)
+    for index, name in enumerate(new):
+        if name.casefold() not in old_keys and index < last_old:
+            messages.append(
+                f"{GVL_PERSIST}.{name}: новая переменная данных приложения стоит перед прежними — добавляйте "
+                "новые в конец файла persist_extra (контракт 18.3, правило 1)"
+            )
     return messages

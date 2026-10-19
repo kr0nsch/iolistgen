@@ -352,8 +352,12 @@ def _cmd_generate(args: argparse.Namespace) -> int:
         if unknown:
             raise OptionError(f"--set: нет генератора {', '.join(unknown)}")
         config = _load_config(args)
+        config_dir = Path(config.path).parent if config.path else None
         options = {
-            name: resolve_options(available[name], config.generators.get(name), overrides.get(name)) for name in names
+            name: resolve_options(
+                available[name], config.generators.get(name), overrides.get(name), config_dir=config_dir
+            )
+            for name in names
         }
     except OptionError as exc:
         _err(f"{PROG} generate: ошибка: {exc}")

@@ -26,7 +26,7 @@ from typing import Literal, Protocol, runtime_checkable
 from iolistgen.config import Config
 from iolistgen.model import IoList, SourceInfo
 
-OptionKind = Literal["str", "bool", "int", "choice"]
+OptionKind = Literal["str", "bool", "int", "choice", "path"]
 OptionValue = str | bool | int
 
 AUTO_GENERATED = "AUTO-GENERATED"
@@ -46,7 +46,11 @@ class GenerationError(Exception):
 
 @dataclass(frozen=True)
 class GeneratorOption:
-    """Опция генератора: задаётся в ``[generators.<имя>]`` или ключом ``--set <имя>.<опция>=...``."""
+    """Опция генератора: задаётся в ``[generators.<имя>]`` или ключом ``--set <имя>.<опция>=...``.
+
+    ``path`` — путь к файлу проекта: относительный путь из ``iolistgen.toml`` берётся от каталога
+    файла настроек, из ``--set`` — от текущего каталога.
+    """
 
     name: str
     help: str
@@ -194,15 +198,28 @@ def resolve_options(
     generator: Generator,
     configured: Mapping[str, object] | None = None,
     overrides: Mapping[str, str] | None = None,
+    *,
+    config_dir: Path | None = None,
 ) -> dict[str, OptionValue]:
-    """Значения опций: умолчания ← ``[generators.<имя>]`` ← ``--set``. ``OptionError`` — неверная опция."""
+    """Значения опций: умолчания ← ``[generators.<имя>]`` ← ``--set``. ``OptionError`` — неверная опция.
+
+    Относительный путь опции вида ``path`` из ``configured`` дополняется каталогом ``config_dir``
+    (каталог ``iolistgen.toml``); из ``overrides`` (командная строка) остаётся от текущего каталога.
+    """
     specs = {option.name: option for option in generator.options}
     values: dict[str, OptionValue] = {name: spec.default for name, spec in specs.items()}
-    for layer in (configured or {}), (overrides or {}):
+    layers: tuple[tuple[Mapping[str, object], Path | None], ...] = (
+        (configured or {}, config_dir),
+        (overrides or {}, None),
+    )
+    for layer, base in layers:
         for name, raw in layer.items():
             spec = specs.get(name)
             if spec is None:
                 known = ", ".join(specs) or "опций нет"
                 raise OptionError(f"у генератора {generator.name} нет опции «{name}» ({known})")
-            values[name] = spec.parse(raw)
+            value = spec.parse(raw)
+            if spec.kind == "path" and base is not None and str(value) and not Path(str(value)).is_absolute():
+                value = str(base / str(value))
+            values[name] = value
     return values

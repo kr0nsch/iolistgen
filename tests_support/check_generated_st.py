@@ -112,7 +112,11 @@ def generate(case: Case, target: Path) -> Path:
     ctx = GeneratorContext(
         generator=generator.name,
         out_dir=target,
-        options=resolve_options(generator, {**config.generators.get(generator.name, {}), **options}),
+        options=resolve_options(
+            generator,
+            {**config.generators.get(generator.name, {}), **options},
+            config_dir=Path(config.path).parent if config.path else None,
+        ),
         config=config,
         source=result.model.source,
         version=__version__,

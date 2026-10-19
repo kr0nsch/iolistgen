@@ -123,7 +123,9 @@ def _run_generators(model: IoList, generators: dict[str, Generator], out_dir: Pa
         ctx = GeneratorContext(
             generator=name,
             out_dir=out_dir,
-            options=resolve_options(generator, config.generators.get(name)),
+            options=resolve_options(
+                generator, config.generators.get(name), config_dir=Path(config.path).parent if config.path else None
+            ),
             config=config,
             source=model.source,
             version=__version__,

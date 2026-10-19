@@ -12,4 +12,12 @@ VAR_GLOBAL PERSISTENT RETAIN
 {{ line }}
 {% endfor %}
 {% endfor %}
+{% if extra %}
+{% for line in extra.title %}
+{{ line }}
+{% endfor %}
+{% for line in extra.lines %}
+{{ line }}
+{% endfor %}
+{% endif %}
 END_VAR
