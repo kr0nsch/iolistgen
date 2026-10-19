@@ -15,7 +15,7 @@ description = "Проверка перечня сигналов АСУ ТП (CSV
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "<ИМЯ ФАМИЛИЯ>" }]
+authors = [{ name = "kr0nsch" }]
 requires-python = ">=3.10"
 keywords = ["plc", "codesys", "iec-61131-3", "io-list", "modbus", "scada", "code-generator"]
 classifiers = [
@@ -40,8 +40,8 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/<GITHUB_USER>/iolistgen"
-Documentation = "https://github.com/<GITHUB_USER>/iolistgen/blob/main/docs/schema.md"
+Repository = "https://github.com/kr0nsch/iolistgen"
+Documentation = "https://github.com/kr0nsch/iolistgen/blob/main/docs/schema.md"
 
 [project.scripts]
 iolistgen = "iolistgen.cli:main"

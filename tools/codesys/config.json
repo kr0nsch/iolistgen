@@ -232,7 +232,7 @@
     },
     "default_namespace": "TPL",
     "placeholder": null,
-    "author": "<ИМЯ ФАМИЛИЯ>",
+    "author": "kr0nsch",
     "description": "iolistgen: объекты src/ в виде библиотеки CODESYS",
     "released": false,
     "exclude": [

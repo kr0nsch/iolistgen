@@ -1,6 +1,6 @@
 # iolistgen
 
-[![CI](https://github.com/<GITHUB_USER>/iolistgen/actions/workflows/ci.yml/badge.svg)](https://github.com/<GITHUB_USER>/iolistgen/actions/workflows/ci.yml)
+[![CI](https://github.com/kr0nsch/iolistgen/actions/workflows/ci.yml/badge.svg)](https://github.com/kr0nsch/iolistgen/actions/workflows/ci.yml)
 [![Лицензия MIT](https://img.shields.io/badge/license-MIT-56677D?style=flat-square&labelColor=1B2736)](LICENSE)
 ![CODESYS 3.5.17](https://img.shields.io/badge/CODESYS-3.5.17-FF7A1A?style=flat-square&labelColor=1B2736)
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3A4B60?style=flat-square&logo=python&logoColor=white)
@@ -321,4 +321,4 @@ pytest and hypothesis in CI.
 
 ## Лицензия
 
-[MIT](LICENSE) © 2026 <ИМЯ ФАМИЛИЯ>
+[MIT](LICENSE) © 2026 kr0nsch
