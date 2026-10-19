@@ -15,7 +15,9 @@ from iolistgen.generators.alarms import (
     ALARM_COLUMNS,
     AlarmListGenerator,
     alarm_rows,
+    bundled_templates,
     load_templates,
+    sentence_part,
     slot_possible,
 )
 from iolistgen.generators.scada_csv import POINTS, TAG_COLUMNS, ScadaCsvGenerator
@@ -139,7 +141,8 @@ def test_alarm_list(tmp_path: Path, kns: IoList) -> None:
     assert "PWR1.FAIL" not in codes  # нет строки CHF — отказа канала не бывает
     lt_h = next(row for row in rows if row["code"] == "LT101.H")
     assert lt_h["priority"] == "Medium"  # колонка High, H — на ступень ниже
-    assert lt_h["text_ru"] == "Уровень в приёмном резервуаре: верхний предупредительный предел"
+    assert lt_h["text_ru"] == "Уровень в приёмном резервуаре: высокое значение"  # шаблон библиотеки
+    assert lt_h["operator_action"] == "Проверить процесс и режим работы оборудования"
 
 
 def test_alarm_options(tmp_path: Path, kns: IoList) -> None:
@@ -200,3 +203,45 @@ def test_alarm_template_errors(tmp_path: Path, content: str, fragment: str) -> N
         load_templates(path)
     with pytest.raises(GenerationError, match="не удалось прочитать"):
         load_templates(tmp_path / "missing.csv")
+
+
+def test_bundled_templates_cover_every_slot() -> None:
+    """Шаблоны библиотеки в пакете (CONSUMERS G5): текст и действие оператора у каждого слота каждого типа."""
+    templates = bundled_templates()
+    for spec in DEVICE_TYPES.values():
+        keys = (
+            ("motorvfd", "motor") if spec.device_type is DeviceType.MOTOR_VFD else (spec.device_type.value.casefold(),)
+        )
+        for slot in spec.alarm_slots:
+            template = next((templates[(key, slot.index)] for key in keys if (key, slot.index) in templates), None)
+            assert template is not None, f"{spec.device_type.value} {slot.index}"
+            assert template.text and template.operator_action, f"{spec.device_type.value} {slot.index}"
+            assert template.cause and template.consequence, f"{spec.device_type.value} {slot.index}"
+    assert ("motor", 6) not in templates and ("motorvfd", 6) in templates  # слоты ПЧ — свои строки MotorVfd
+    assert ("pid", 0) in templates
+
+
+def test_default_texts_come_from_library_templates(kns: IoList, tmp_path: Path) -> None:
+    rows = {row.code: row for row in alarm_rows(kns, bundled_templates())}
+    assert rows["LT101.HH"].text == "Уровень в приёмном резервуаре: аварийно высокое значение"
+    assert rows["LT101.HH"].operator_action.startswith("Проверить процесс по месту")
+    run(AlarmListGenerator(), kns, tmp_path / "default")
+    text = (tmp_path / "default/docs/alarms.csv").read_text(encoding="utf-8")
+    assert "аварийно высокое значение" in text and "Проверить процесс по месту" in text
+    run(AlarmListGenerator(), kns, tmp_path / "none", {"templates": "none"})
+    plain = (tmp_path / "none/docs/alarms.csv").read_text(encoding="utf-8")
+    assert "верхний аварийный предел" in plain and "Проверить процесс" not in plain
+
+
+def test_vfd_comm_loss_template_is_split_into_columns() -> None:
+    """Строка COM файла библиотеки 1.0.0 со сдвигом колонок исправлена в копии пакета (TEMPLATE_FIXES)."""
+    template = bundled_templates()[("motorvfd", 6)]
+    assert template.operator_action == "Проверить линию связи, питание и сетевые настройки ПЧ"
+    assert template.cause == "Нет обмена с ПЧ дольше tCommLoss при поданном питании"
+    assert template.consequence.startswith("Поведение ПЧ задаёт его сторожевой таймер связи")
+
+
+def test_sentence_part_keeps_abbreviations() -> None:
+    assert sentence_part("Аварийно высокое значение") == "аварийно высокое значение"
+    assert sentence_part("NE 43: отказ") == "NE 43: отказ"
+    assert sentence_part("ПЧ не готов") == "ПЧ не готов"

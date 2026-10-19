@@ -316,7 +316,7 @@ AUX SCADA только читает: его пишет код приложени
 | `application` | `Application` | имя приложения CODESYS |
 | `opcua_namespace` | `4` | номер пространства имён OPC UA |
 | `opcua_device` | `CODESYS Control Win V3` | имя устройства в узле OPC UA; пусто — колонка пустая |
-| `templates` | — | шаблоны текстов тревог (как у `alarm-list`) |
+| `templates` | шаблоны пакета | шаблоны текстов тревог (как у `alarm-list`) |
 
 ### MasterSCADA 4D и другие SCADA
 
@@ -353,15 +353,21 @@ AUX SCADA только читает: его пишет код приложени
 `CHF` и не по Modbus, рассогласование ПЧ при `rSpeedDev_pct = 0`, рассогласование и отказ ОС
 регулирующего клапана без ОС, авария позиционера без строки `POS_FAULT`.
 
-Текст по умолчанию — «описание устройства: смысл слота». Опция `templates` подключает шаблоны
-текстов библиотеки `docs/alarm_templates.csv` (`type;slot;suffix;text_ru;operator_action`, по
-желанию `cause`, `consequence`); у `MotorVfd` берутся шаблоны `MotorVfd`, затем `Motor`.
+Текст — «описание устройства: текст шаблона», причина, последствие и действие оператора — из того
+же шаблона. Шаблоны по умолчанию — копия `docs/alarm_templates.csv` выпуска plc-process-lib 1.0.0 в
+пакете (`iolistgen/data/alarm_templates.csv`, колонки `type;slot;suffix;text_ru;operator_action;
+cause;consequence`, по строке на каждый слот каждого типа); у `MotorVfd` берутся шаблоны `MotorVfd`
+(слоты 6–7), затем `Motor`. Копия совпадает с файлом библиотеки, кроме двух строк, где в файле 1.0.0
+сдвинуты колонки (COM у `MotorVfd`, BLS у `Valve`: причина записана через запятую в колонке
+действия оператора) — их сверяет `tests_support/check_library.py`. Опция `templates` задаёт свой
+файл того же формата (например, файл библиотеки по `build_from_repo`), `none` — без шаблонов:
+текст «описание устройства: смысл слота» из каталога, без причины и действия.
 
 | Опция | По умолчанию | Смысл |
 |---|---|---|
 | `filename` | `docs/alarms.csv` | файл |
 | `delimiter`, `comment_header` | `;`, `true` | как у `modbus-map` |
-| `templates` | — | шаблоны текстов тревог |
+| `templates` | шаблоны пакета | файл шаблонов текстов тревог; `none` — без шаблонов; относительный путь из `iolistgen.toml` — от его каталога |
 | `include_disabled` | `false` | включить слоты с приоритетом `None` |
 | `only_possible` | `true` | только тревоги, которые могут сработать при составе устройства |
 

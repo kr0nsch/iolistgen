@@ -7,17 +7,18 @@
 устройства не возникает (опция ``only_possible``): контроль ОС двигателя без ОС, концевики
 задвижки без концевиков, выход за диапазон у входа без NE 43 и т. п. (разделы 11–16 контракта).
 
-Тексты: по умолчанию — «описание устройства: смысл слота» (смысл — из каталога библиотеки).
-Опция ``templates`` подключает шаблоны текстов библиотеки ``docs/alarm_templates.csv``
-(``type;slot;suffix;text_ru;operator_action``, раздел 19): текст и действие оператора берутся
-оттуда. Причина и последствие заполняются по шаблонам ``cause`` и ``consequence``, если такие
-колонки в файле шаблонов есть.
+Тексты — «описание устройства: текст шаблона». По умолчанию шаблоны — копия
+``docs/alarm_templates.csv`` библиотеки 1.0.0 в пакете (``iolistgen/data/alarm_templates.csv``,
+раздел 19 контракта: ``type;slot;suffix;text_ru;operator_action;cause;consequence``): текст,
+действие оператора, причина и последствие. Опция ``templates`` задаёт свой файл того же формата
+(например, файл библиотеки другой версии), ``none`` — без шаблонов: смысл слота из каталога.
 """
 
 from __future__ import annotations
 
 import csv
 from dataclasses import dataclass
+from importlib import resources
 from pathlib import Path, PurePosixPath
 
 from iolistgen.catalog import AlarmSlot
@@ -27,6 +28,14 @@ from iolistgen.generators.base import GenerationError, GeneratorContext, Generat
 from iolistgen.generators.stfmt import one_line
 from iolistgen.model import Device, IoList
 from iolistgen.stvalues import format_seconds
+
+# Шаблоны текстов тревог библиотеки в пакете и значение опции «без шаблонов»
+BUNDLED_TEMPLATES = "alarm_templates.csv"
+NO_TEMPLATES = "none"
+TEMPLATES_HELP = (
+    "шаблоны текстов тревог: пусто — шаблоны библиотеки plc-process-lib 1.0.0 из пакета, путь — свой файл "
+    "type;slot;suffix;text_ru;operator_action[;cause;consequence], none — без шаблонов (смысл слота)"
+)
 
 ALARM_COLUMNS = (
     "id",
@@ -97,6 +106,27 @@ def load_templates(path: Path) -> dict[tuple[str, int], AlarmTemplate]:
         text = path.read_text(encoding="utf-8-sig")
     except OSError as exc:
         raise GenerationError(f"alarm templates: не удалось прочитать {path} ({exc.strerror})") from exc
+    return parse_templates(text, path)
+
+
+def bundled_templates() -> dict[tuple[str, int], AlarmTemplate]:
+    """Шаблоны библиотеки 1.0.0 из пакета (``iolistgen/data/alarm_templates.csv``)."""
+    resource = resources.files("iolistgen").joinpath("data", BUNDLED_TEMPLATES)
+    return parse_templates(resource.read_text(encoding="utf-8"), Path(BUNDLED_TEMPLATES))
+
+
+def templates_from_option(value: str) -> dict[tuple[str, int], AlarmTemplate] | None:
+    """Опция ``templates``: пусто — шаблоны пакета, ``none`` — без шаблонов, иначе — файл."""
+    text = value.strip()
+    if not text:
+        return bundled_templates()
+    if text.casefold() == NO_TEMPLATES:
+        return None
+    return load_templates(Path(text))
+
+
+def parse_templates(text: str, path: Path) -> dict[tuple[str, int], AlarmTemplate]:
+    """Разбор текста шаблонов (строки ``#`` — комментарии)."""
     lines = [line for line in text.splitlines() if line.strip() and not line.lstrip().startswith("#")]
     if not lines:
         raise GenerationError(f"alarm templates: {path} пуст")
@@ -120,6 +150,13 @@ def load_templates(path: Path) -> dict[tuple[str, int], AlarmTemplate]:
             consequence=(row.get("consequence") or "").strip(),
         )
     return result
+
+
+def sentence_part(text: str) -> str:
+    """Текст шаблона после «описание устройства:»: первая буква строчная, если это не аббревиатура."""
+    if len(text) > 1 and text[0].isupper() and text[1].islower():
+        return text[0].lower() + text[1:]
+    return text
 
 
 def _template_type(device_type: DeviceType) -> tuple[str, ...]:
@@ -207,7 +244,7 @@ def alarm_rows(
                 template = (templates or {}).get((key, slot.index))
                 if template is not None:
                     break
-            title = template.text if template is not None and template.text else slot.title
+            title = sentence_part(template.text) if template is not None and template.text else slot.title
             setpoint, delay = _setpoint_and_delay(device, slot)
             rows.append(
                 AlarmRow(
@@ -234,9 +271,7 @@ class AlarmListGenerator:
         GeneratorOption("filename", "файл относительно --out", "str", "docs/alarms.csv"),
         csvout.DELIMITER_OPTION,
         csvout.COMMENT_OPTION,
-        GeneratorOption(
-            "templates", "шаблоны текстов тревог библиотеки (docs/alarm_templates.csv); пусто — встроенные", "str", ""
-        ),
+        GeneratorOption("templates", TEMPLATES_HELP, "path", ""),
         GeneratorOption("include_disabled", "включить слоты с приоритетом None (выключенные)", "bool", False),
         GeneratorOption(
             "only_possible", "только тревоги, условие которых возникает при составе устройства", "bool", True
@@ -244,7 +279,7 @@ class AlarmListGenerator:
     )
 
     def generate(self, model: IoList, out_dir: Path, ctx: GeneratorContext) -> list[Path]:
-        templates = load_templates(Path(ctx.str_option("templates"))) if ctx.str_option("templates") else None
+        templates = templates_from_option(ctx.str_option("templates"))
         rows = alarm_rows(
             model,
             templates,

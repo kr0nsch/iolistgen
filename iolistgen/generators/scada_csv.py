@@ -27,7 +27,7 @@ from typing import Literal
 from iolistgen.enums import DeviceType
 from iolistgen.fbapi import STRUCTS, StructField, fb_outputs
 from iolistgen.generators import csvout
-from iolistgen.generators.alarms import AlarmTemplate, alarm_rows, load_templates
+from iolistgen.generators.alarms import TEMPLATES_HELP, alarm_rows, templates_from_option
 from iolistgen.generators.base import GeneratorContext, GeneratorOption
 from iolistgen.generators.plc import GVL_DEVICES, GVL_HMI, DeviceBinding, IoVar, PlcModel, build_plc
 from iolistgen.generators.stfmt import one_line
@@ -240,7 +240,7 @@ class ScadaCsvGenerator:
             "str",
             "CODESYS Control Win V3",
         ),
-        GeneratorOption("templates", "шаблоны текстов тревог библиотеки (docs/alarm_templates.csv)", "str", ""),
+        GeneratorOption("templates", TEMPLATES_HELP, "path", ""),
     )
 
     def generate(self, model: IoList, out_dir: Path, ctx: GeneratorContext) -> list[Path]:
@@ -270,9 +270,7 @@ class ScadaCsvGenerator:
         ]
         alarms_file = ctx.str_option("alarms_csv").strip()
         if alarms_file:
-            templates: dict[tuple[str, int], AlarmTemplate] | None = None
-            if ctx.str_option("templates"):
-                templates = load_templates(Path(ctx.str_option("templates")))
+            templates = templates_from_option(ctx.str_option("templates"))
             sep = ctx.str_option("separator")
             alarm_dicts: list[dict[str, csvout.CsvValue]] = []
             for alarm in alarm_rows(model, templates):

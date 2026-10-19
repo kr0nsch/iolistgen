@@ -467,9 +467,14 @@ TEMPLATE_FIXES: dict[tuple[str, int], str] = {
 
 
 def read_templates(path: Path) -> dict[tuple[str, int], dict[str, str]]:
-    with path.open(encoding="utf-8-sig", newline="") as handle:
-        rows = list(csv.DictReader(handle, delimiter=";"))
+    lines = [line for line in path.read_text(encoding="utf-8-sig").splitlines() if not line.startswith("#")]
+    rows = list(csv.DictReader(lines, delimiter=";"))
     return {(row["type"], int(row["slot"])): {k: (v or "").strip() for k, v in row.items()} for row in rows}
+
+
+def _joined(fixed: dict[str, str]) -> tuple[str, str]:
+    """Исправленная строка в раскладке файла библиотеки: (operator_action, cause + «;» + consequence)."""
+    return f"{fixed['operator_action']}, {fixed['cause']}", fixed["consequence"]
 
 
 def check_templates(lib: Library) -> Problems:
@@ -490,6 +495,10 @@ def check_templates(lib: Library) -> Problems:
                 problems.append(f"шаблоны тревог {key}: суффикс или текст отличаются от библиотеки")
             if mine[key] == theirs[key]:
                 problems.append(f"шаблоны тревог {key}: исправление больше не нужно — уберите его из TEMPLATE_FIXES")
+            action, consequence = _joined(mine[key])
+            library_consequence = f"{theirs[key]['cause']}, {theirs[key]['consequence']}"
+            if (action, consequence) != (theirs[key]["operator_action"], library_consequence):
+                problems.append(f"шаблоны тревог {key}: исправление меняет не только разбиение колонок")
         elif mine[key] != theirs[key]:
             problems.append(f"шаблоны тревог {key}: пакет {mine[key]}, библиотека {theirs[key]}")
     return problems
@@ -505,6 +514,7 @@ CHECKS: dict[str, tuple[str, Callable[[Library], Problems]]] = {
     "constants": ("константы GVL_Const", check_constants),
     "coverage": ("полнота каталога", check_coverage),
     "stub": ("заглушка", lambda lib: check_stub(lib, scan(STUB_DIR))),
+    "templates": ("шаблоны текстов тревог", check_templates),
 }
 
 
