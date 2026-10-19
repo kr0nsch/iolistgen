@@ -402,8 +402,8 @@ cause;consequence`, по строке на каждый слот каждого 
 
 Настоящая проверка — сборка в CODESYS 3.5.17.30 с библиотекой plc-process-lib 1.0.0.0: код по
 перечню КНС-1 в `src/` этого репозитория собран без ошибок и предупреждений, Cfg всех устройств
-приняты `CheckConfig` библиотеки (README, «Сборка в CODESYS»; [TEST_REPORT.md](TEST_REPORT.md)). Без
-CODESYS — на любом ПК и в CI — сгенерированный код проверяется так
+приняты `CheckConfig` библиотеки ([README, «Тесты и качество»](../README.md#тесты-и-качество);
+[TEST_REPORT.md](TEST_REPORT.md)). Без CODESYS — на любом ПК и в CI — сгенерированный код проверяется так
 (`python tests_support/check_generated_st.py`, в CI — задание RuSTy):
 
 1. **st_lint** (`tools/check/st_lint.py --strict`) — префиксы, заголовки POU, длина строк,
