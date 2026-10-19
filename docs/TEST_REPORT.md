@@ -8,12 +8,12 @@
 <!-- cds:test-report:begin (раздел обновляет `python tools/codesys/cds.py report`) -->
 ## Последний прогон в CODESYS
 
-Проверено в CODESYS 3.5.17.30 / CODESYS Control Win V3 (пользовательский процесс) — 2026-10-16 00:28:02. Итог: **все тесты пройдены**.
+Проверено в CODESYS 3.5.17.30 / CODESYS Control Win V3 (пользовательский процесс) — 2026-10-19 12:59:39. Итог: **все тесты пройдены**.
 
 | Параметр | Значение |
 |---|---|
-| Дата прогона | 2026-10-16 00:28:02 |
-| Коммит | e3e7513-dirty |
+| Дата прогона | 2026-10-19 12:59:39 |
+| Коммит | c59d566-dirty |
 | CODESYS | 3.5.17.30 (профиль `CODESYS V3.5 SP17 Patch 3`) |
 | Устройство в проекте | CODESYS Control Win V3 (4096 / 0000 0001 / 3.5.17.30) |
 | Рантайм | CODESYS Control Win V3 (пользовательский процесс) |
@@ -23,32 +23,17 @@
 
 | Набор | Тестов | Пройдено | Упало | Пропущено | Итог |
 |---|---|---|---|---|---|
-| `PRG_Tests.fbF_ClampTest` | 7 | 7 | 0 | 0 | пройдено |
-| `PRG_Tests.fbExampleTest` | 11 | 11 | 0 | 0 | пройдено |
-| **Всего** | 18 | 18 | 0 | 0 | **пройдено** |
+| `PRG_Tests.fbProjectCfgTest` | 4 | 4 | 0 | 0 | пройдено |
+| **Всего** | 4 | 4 | 0 | 0 | **пройдено** |
 
 ### Результаты тестов
 
 | Набор | Тест | Итог |
 |---|---|---|
-| `PRG_Tests.fbF_ClampTest` | `InsideRangeReturnsValue` | пройден |
-| `PRG_Tests.fbF_ClampTest` | `BelowLowReturnsLow` | пройден |
-| `PRG_Tests.fbF_ClampTest` | `AboveHighReturnsHigh` | пройден |
-| `PRG_Tests.fbF_ClampTest` | `AtLowBoundaryReturnsLow` | пройден |
-| `PRG_Tests.fbF_ClampTest` | `AtHighBoundaryReturnsHigh` | пройден |
-| `PRG_Tests.fbF_ClampTest` | `EqualBoundsReturnsBound` | пройден |
-| `PRG_Tests.fbF_ClampTest` | `LowGreaterThanHighSwapsBounds` | пройден |
-| `PRG_Tests.fbExampleTest` | `AutoSwitchesOnBelowThreshold` | пройден |
-| `PRG_Tests.fbExampleTest` | `AutoThresholdsAreInclusive` | пройден |
-| `PRG_Tests.fbExampleTest` | `AutoHoldsStateInsideHysteresis` | пройден |
-| `PRG_Tests.fbExampleTest` | `InvalidValueLatchesFault` | пройден |
-| `PRG_Tests.fbExampleTest` | `AcknowledgeClearsFaultWhenValid` | пройден |
-| `PRG_Tests.fbExampleTest` | `AcknowledgeKeepsFaultWhileInvalid` | пройден |
-| `PRG_Tests.fbExampleTest` | `ManualFollowsCommand` | пройден |
-| `PRG_Tests.fbExampleTest` | `LocalAndOutOfServiceSwitchOff` | пройден |
-| `PRG_Tests.fbExampleTest` | `DefaultModeIsOutOfService` | пройден |
-| `PRG_Tests.fbExampleTest` | `ParametersAreClamped` | пройден |
-| `PRG_Tests.fbExampleTest` | `CountsSwitchOnsAndResetClears` | пройден |
+| `PRG_Tests.fbProjectCfgTest` | `AllDevicesProjectCfgPassCheckConfig` | пройден |
+| `PRG_Tests.fbProjectCfgTest` | `PidCfgComesFromIoList` | пройден |
+| `PRG_Tests.fbProjectCfgTest` | `AlarmArrayWrittenWholeKeepsLibraryDefaults` | пройден |
+| `PRG_Tests.fbProjectCfgTest` | `ApplyProjectCfgCopiesCfgKeepsRetain` | пройден |
 
 ### Упавшие тесты
 
@@ -59,26 +44,35 @@ _Нет._
 
 ## Что проверяют тесты
 
+Набор `FB_ProjectCfg_Test` (`tests/POUs/FB_ProjectCfg_Test`) проверяет код, который `iolistgen` сгенерировал по
+перечню КНС-1 (`src/GVLs/Generated`, `src/POUs/Generated`), вместе с настоящей библиотекой plc-process-lib
+1.0.0.0. Главный вопрос — совпадает ли зеркало `CheckConfig` валидатора с ФБ библиотеки: перечень, который
+`iolistgen validate` пропустил, не должен дать устройство с отклонённой Cfg.
+
 | Набор | Тест | Что проверяет |
 |---|---|---|
-| `FB_F_Clamp_Test` | `InsideRangeReturnsValue` | значение внутри диапазона не меняется |
-| `FB_F_Clamp_Test` | `BelowLowReturnsLow` | значение ниже диапазона → нижняя граница |
-| `FB_F_Clamp_Test` | `AboveHighReturnsHigh` | значение выше диапазона → верхняя граница |
-| `FB_F_Clamp_Test` | `AtLowBoundaryReturnsLow` | значение на нижней границе не меняется |
-| `FB_F_Clamp_Test` | `AtHighBoundaryReturnsHigh` | значение на верхней границе не меняется |
-| `FB_F_Clamp_Test` | `EqualBoundsReturnsBound` | вырожденный диапазон `rLow = rHigh` |
-| `FB_F_Clamp_Test` | `LowGreaterThanHighSwapsBounds` | `rLow > rHigh`: границы меняются местами |
-| `FB_Example_Test` | `AutoSwitchesOnBelowThreshold` | авторежим: значение ниже порога включения (уставка − гистерезис) включает выход, отказа нет |
-| `FB_Example_Test` | `AutoThresholdsAreInclusive` | авторежим: на пороге включения выход включается, на уставке — отключается |
-| `FB_Example_Test` | `AutoHoldsStateInsideHysteresis` | авторежим: в зоне гистерезиса выход сохраняет состояние (после включения и после отключения) |
-| `FB_Example_Test` | `InvalidValueLatchesFault` | недостоверное измерение в авторежиме: отказ, выход отключён; отказ держится после восстановления измерения |
-| `FB_Example_Test` | `AcknowledgeClearsFaultWhenValid` | `Acknowledge()` при достоверном измерении снимает отказ и возвращает TRUE, выход снова управляется |
-| `FB_Example_Test` | `AcknowledgeKeepsFaultWhileInvalid` | `Acknowledge()` при недостоверном измерении возвращает FALSE, отказ остаётся |
-| `FB_Example_Test` | `ManualFollowsCommand` | ручной режим: выход повторяет `xManualOn`, недостоверное измерение отказа не даёт |
-| `FB_Example_Test` | `LocalAndOutOfServiceSwitchOff` | `Local` и `OutOfService` отключают выход при любых измерении и команде |
-| `FB_Example_Test` | `DefaultModeIsOutOfService` | режим по умолчанию — `OutOfService`: выход отключён |
-| `FB_Example_Test` | `ParametersAreClamped` | уставка и гистерезис вне диапазона ограничиваются `EXAMPLE_SP_MAX_PCT` и `EXAMPLE_HYST_MIN_PCT` |
-| `FB_Example_Test` | `CountsSwitchOnsAndResetClears` | счётчик `Count` считает только фронты включения; `Reset()` через `I_Resettable` отключает выход и обнуляет счётчик |
+| `FB_ProjectCfg_Test` | `AllDevicesProjectCfgPassCheckConfig` | после «применить уставки проекта» и вызова `PRG_Devices` (и регулятора `LIC101` — его вызывает логика станции) у всех 30 устройств `stSts.stCommon.wCfgErr = 0` и снят бит `DEV_STS_CFG_ERROR`: Cfg проекта — уставки перечня, `params`, выводы из состава — принимает `CheckConfig` каждого ФБ |
+| `FB_ProjectCfg_Test` | `PidCfgComesFromIoList` | Cfg регулятора `LIC101` из строки устройства перечня: `eAction = Direct`, `xUseOutAct`, диапазон PV из `range_max`, пределы задания из `params`, `udiAlarmIdBase = dev_no · 10`, тревога PVF выключена |
+| `FB_ProjectCfg_Test` | `AlarmArrayWrittenWholeKeepsLibraryDefaults` | инициализатор с массивом `astAlarm`, записанным целиком (контракт 18.3, правило 3): у `LT101` слоты, которые меняет колонка `alarm_priority`, получили High и Medium, остальные (`Failure`, `OutOfRange`) сохранили умолчания DUT библиотеки; уставка HH включена со значением перечня |
+| `FB_ProjectCfg_Test` | `ApplyProjectCfgCopiesCfgKeepsRetain` | `PRG_ApplyProjectCfg`: изменённая с HMI уставка `tMinStop` насоса `P101` возвращается к значению перечня, Retain (`udiOpCount`) не меняется (контракт 18.3, правило 2) |
+
+Отрицательный контроль (2026-10-19, вручную, в git не попал): в `GVL_CfgProject` насосу `P101` задан
+`tResetWindow := T#0S` — `cds.py test` дал «упало 1 из 4»: `AllDevicesProjectCfgPassCheckConfig` —
+«P101: wCfgErr must be 0 for the project Cfg» (бит `MOT_CFG_RESET`). Набор находит Cfg, которую ФБ отклоняет.
+
+Объект Persistent Variables `GVL_Persist` в проектах `cds.py` создаёт `tools_project/codesys_pvl.py`
+(импорт PLCopenXML): скриптом SP17 он не создаётся ([MANUAL_STEPS.md](MANUAL_STEPS.md#9-код-сгенерированный-iolistgen-в-проекте-codesys)).
+
+## Сборка в CODESYS
+
+| Дата | Команда | Итог |
+|---|---|---|
+| 2026-10-19 | `python tools/codesys/cds.py check` | `check: OK (объектов 9, ошибок 0, предупреждений 0)` — все объекты `src/` |
+| 2026-10-19 | `python tools/codesys/cds.py check --tests` | `check: OK (объектов 11, ошибок 0, предупреждений 0)` |
+| 2026-10-19 | `python tools/codesys/cds.py build` | без объекта Persistent Variables — 134 ошибки (C0046 «Идентификатор 'GVL_Persist' не задан», C0018); после `tools_project/codesys_pvl.py` — `build: OK (ошибок 0, предупреждений 0)` |
+| 2026-10-19 | `python tools/codesys/cds.py build --tests` | `build: OK (ошибок 0, предупреждений 0)` |
+
+Библиотеки проекта: `plc-process-lib, 1.0.0.0 (plc-portfolio)`, `#Standard`, в режиме тестов — coUnit 1.2.0.0.
 
 ## Проверки без CODESYS
 
@@ -86,8 +80,9 @@ _Нет._
 
 | Проверка | Итог | Примечание |
 |---|---|---|
-| `ruff check`, `ruff format --check`, `mypy`, `pytest` | пройдено, 2026-10-16, локально | pytest: все тесты, включая интеграционные с настоящими `plc` и iec_checker |
-| `tools/assemble.py` (все варианты, с `--tests` и без) | пройдено, 2026-10-16, локально | 8 объектов `src/` + 3 объекта `tests/` |
-| `tools/check/st_lint.py --strict` | пройдено, 2026-10-16, локально | 60 файлов, 0 замечаний |
-| iec_checker 0.4 (локально, `run_iec_checker.py --tests`) | пройдено, 2026-10-16 | 11 файлов, ошибок разбора нет; необоснованных находок 0, обоснованных 100 — разбор в [STATIC_ANALYSIS.md](STATIC_ANALYSIS.md) |
-| RuSTy 1.0.6 (локально, `run_rusty.py`) | пройдено, 2026-10-16 | 11 файлов (`src/` и `tests/` с прокладкой coUnit), исключений нет, 0 ошибок, 0 предупреждений |
+| `ruff check`, `ruff format --check`, `mypy`, `pytest` | пройдено, 2026-10-19, локально | pytest: все тесты, включая интеграционные с настоящими `plc` и iec_checker и сверку с исходниками plc-process-lib |
+| `tools/assemble.py` (все варианты, с `--tests` и без) | пройдено, 2026-10-19, локально | 9 объектов `src/` + 2 объекта `tests/` |
+| `tools/check/st_lint.py --strict` | пройдено, 2026-10-19, локально | 26 файлов, 0 замечаний |
+| iec_checker 0.4 (локально, `run_iec_checker.py --tests`) | пройдено, 2026-10-19 | 11 объектов, ошибок разбора нет; необоснованных находок 0, обоснованных 243 — разбор в [STATIC_ANALYSIS.md](STATIC_ANALYSIS.md) |
+| RuSTy 1.0.6 (локально, `tests_support/check_generated_st.py --repo` и без ключа) | пройдено, 2026-10-19 | `src/` с заглушкой plc-process-lib и 4 случая сгенерированного ST: 0 ошибок, 0 предупреждений |
+| `tests_support/check_library.py` | пройдено, 2026-10-19 | каталог и заглушка совпадают с исходниками plc-process-lib 1.0.0: перечислений 23, структур Cfg 9, Cmd/Sts/Retain 15, ФБ 7, констант 33, слотов тревог 34, шаблоны текстов тревог |

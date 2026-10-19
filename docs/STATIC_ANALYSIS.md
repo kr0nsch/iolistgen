@@ -4,6 +4,11 @@
 исправлены в коде, — с обоснованием. Исправленные находки сюда не пишутся. Здесь же — итог
 проверки компиляции RuSTy.
 
+С версии 0.2.0 в `src/` — не пример шаблона, а код, который `iolistgen` сгенерировал по перечню
+КНС-1 (`src/GVLs/Generated`, `src/POUs/Generated`, команда — в [MANUAL_STEPS.md](MANUAL_STEPS.md#9-код-сгенерированный-iolistgen-в-проекте-codesys)),
+и ручная точка входа `PRG_Main`; в `tests/` — набор coUnit `FB_ProjectCfg_Test`. Код ссылается на
+библиотеку plc-process-lib (`PL.`), поэтому RuSTy проверяет его вместе с заглушкой библиотеки.
+
 ## Как запускается
 
 | Инструмент | Где | Вход | Отчёт |
@@ -11,22 +16,23 @@
 | `tools/check/st_lint.py --strict` | локально и в CI | `src/`, `tests/` | вывод в консоль, код выхода ≠ 0 при нарушениях |
 | `tools/check/run_iec_checker.py --tests` | локально и в CI (обязательно): бинарник iec_checker v0.4 из релизов github.com/jubnzv/iec-checker | `build/assembled/iec-checker/` (вариант сборки `iec-checker`) | `build/iec_checker.json`, `build/iec_checker.md` |
 | то же с `--docker` | CI, необязательное задание: образ `jubnzv1/iec-checker:nightly`, закреплённый по дайджесту в `ci.yml` | то же | то же, артефакт `iec-checker-nightly-reports` |
-| `tools/check/run_rusty.py` | локально и в CI (необязательное задание): RuSTy `plc --check` | `build/assembled/rusty/` (вариант сборки `rusty`, `src/` и `tests/`) | `build/rusty.log`, `build/rusty.json` |
+| `tests_support/check_generated_st.py --repo` | локально и в CI (необязательное задание): st_lint, сборка раскладки и RuSTy `plc --check` | `src/` репозитория вместе с заглушкой `tests_support/pl_stub/` | `build/st_check/repo_src/rusty/` |
+| `tests_support/check_generated_st.py` | то же | ST, сгенерированный по перечням примеров и тестов (4 случая) | `build/st_check/<случай>/` |
 
 Обоснования в `tools/check/iec_checker_allow.toml` подобраны под находки v0.4 — той же версии, что в
 обязательном шаге CI. Образ `nightly` разбирает больше конструкций и может находить иначе: если
 находка есть только в одной версии — укажите это в столбце «решение». Интеграционный тест
 `tools/tests/test_run_iec_checker.py::test_integration_repository_sources` проверяет, что каждое
-обоснование используется: после правок примера уберите устаревшие записи.
+обоснование используется: после правок `src/` или перегенерации уберите устаревшие записи.
 
 ## Последний прогон
 
 | Дата | Инструмент | Вход | Итог |
 |---|---|---|---|
-| 2026-10-16 | `st_lint --strict` | `src/`, `tests/` (60 файлов) | 0 ошибок, 0 предупреждений |
-| 2026-10-16 | `run_iec_checker.py` (iec_checker 0.4, Windows, локально) | 8 объектов `src/` | ошибок разбора нет; необоснованных 0; обоснованных 32: CP3 — 24, L17 — 4, CP9 — 2, UnusedVariable — 2; артефактов сборки 10 (CP3) |
-| 2026-10-16 | `run_iec_checker.py --tests` (iec_checker 0.4, Windows, локально) | 11 объектов `src/` и `tests/` | ошибок разбора нет; необоснованных 0; обоснованных 100: CP3 — 49, UnusedVariable — 30, CP9 — 17, L17 — 4; артефактов сборки 10 (CP3) |
-| 2026-10-16 | `run_rusty.py` (RuSTy 1.0.6, `plc --check`, Windows, локально) | 11 файлов `build/assembled/rusty/` (`src/` и `tests/` с прокладками coUnit и Standard) | 0 ошибок, 0 предупреждений; исключений в `rusty_exclude.txt` нет |
+| 2026-10-19 | `st_lint --strict` | `src/`, `tests/` (26 файлов) | 0 ошибок, 0 предупреждений |
+| 2026-10-19 | `run_iec_checker.py` (iec_checker 0.4, Windows, локально) | 9 объектов `src/` | ошибок разбора нет; необоснованных 0; обоснованных 219: CP3 — 214, CP9 — 3, L17 — 2; артефактов сборки 0 |
+| 2026-10-19 | `run_iec_checker.py --tests` (iec_checker 0.4, Windows, локально) | 11 объектов `src/` и `tests/` | ошибок разбора нет; необоснованных 0; обоснованных 243: CP3 — 218, UnusedVariable — 14, CP9 — 9, L17 — 2; неиспользованных обоснований нет |
+| 2026-10-19 | `check_generated_st.py --repo` (RuSTy 1.0.6, `plc --check`, Windows, локально) | `src/` и заглушка plc-process-lib (71 файл) | 0 ошибок, 0 предупреждений |
 | — | iec_checker 0.4 (CI, Linux) | 11 объектов `src/` и `tests/` | _перенести из отчёта CI_ |
 | — | iec_checker `nightly` (CI, необязательно) | то же | _перенести из отчёта CI_ |
 
@@ -34,42 +40,43 @@
 
 | Правило | Файл | Находка | Решение / обоснование |
 |---|---|---|---|
-| PLCOPEN-CP3 | все POU `src/` (34) | «Variable … shall be initialized before being used» для входов, выходов и локальных переменных без явного начального значения | Обосновано. В CODESYS, как и по МЭК 61131-3, переменная без явного начального значения получает значение по умолчанию своего типа (0, `FALSE`; у `E_DeviceMode` это `Auto = 0`). Явные значения стоят там, где умолчание не подходит: режим `OutOfService`, уставка и гистерезис из `GVL_Const`. Вариант сборки `iec-checker` убирает неконстантные начальные значения, поэтому находка есть и для них. Часть находок — на копиях переменных в методах, которые сборка понижает до функций (`Acknowledge`, `Reset`, `Count`) |
-| PLCOPEN-CP9 | `FB_Example` (тело) | «Code is too complex (28 McCabe complexity)», «(26 statements)» | Обосновано. Пороги iec_checker 0.4 — сложность > 15 и > 25 операторов, а сложность он считает завышенно: проверено на синтетическом примере, одна конструкция `IF … ELSE … END_IF` прибавляет 5. Классическая цикломатическая сложность тела — 8 (7 точек ветвления: 3 в `CASE`, 3 в `IF … ELSIF`, 1 в счётчике). Делить 40 строк линейной логики на методы ради метрики — хуже для чтения |
-| PLCOPEN-L17 | `FB_Example`: `IF xFault …` в режиме `Auto`, `IF` счётчика включений | «Each IF instruction should have an ELSE clause» | Обосновано: действия «иначе» нет. В зоне гистерезиса выход сохраняет состояние, без фронта счётчик не меняется. Пустая ветка `ELSE` или присваивание переменной самой себе только добавили бы шум |
-| PLCOPEN-L17 | `PRG_Main`: обработка `stCmd.xAck`, `stCmd.xReset` | то же | Обосновано: однократная команда не пришла — делать нечего |
-| UnusedVariable | `PRG_Main`: `stCmd`, `stSts` | «Found unused local variable» | Ложное срабатывание: переменные используются через поля (`stCmd.xAck`, `stSts.xOut := …`), iec_checker 0.4 обращения к полям структуры не учитывает. Перепроверить на образе `nightly` |
+| PLCOPEN-CP3 | GVL и POU `src/` (214) | «Variable … shall be initialized before being used» для переменных без явного начального значения | Обосновано. В CODESYS, как и по МЭК 61131-3, переменная без явного начального значения получает значение по умолчанию своего типа (0, `FALSE`): каналы `GVL_IO`, команды `GVL_Hmi`, экземпляры `GVL_Devices`, Retain устройств. Вариант сборки `iec-checker` убирает и неконстантные начальные значения (инициализаторы Cfg в `GVL_Persist`, `GVL_CfgProject`), поэтому находка есть и для них |
+| PLCOPEN-CP9 | `PRG_Devices` (сложность 118, 188 операторов), `PRG_ApplyProjectCfg` (30 операторов) | «Code is too complex» | Обосновано. Код сгенерирован по перечню: линейная последовательность вызовов устройств, присваиваний выходов и копирований Cfg, единственное ветвление — команда HMI «применить уставки проекта». iec_checker 0.4 считает каждое обращение к экземпляру и присваивание (сложность завышена, см. ниже), и число растёт с числом устройств перечня; делить сгенерированный вызов на части ради метрики незачем |
+| PLCOPEN-L17 | `PRG_Devices`: команда `GVL_Hmi.xApplyProjectCfg` | «Each IF instruction should have an ELSE clause» | Обосновано: команда не пришла — делать нечего; пустая ветка `ELSE` в сгенерированном коде только добавит шум |
+| PLCOPEN-L17 | `PRG_Main`: восстановление задания оператора после старта | то же | Обосновано: задание восстанавливается из `GVL_Persist` один раз; в остальных циклах делать нечего |
 
-Исправлено по итогам прогона (для истории): защёлка отказа в `FB_Example` и квитирование в
-`Acknowledge` записаны логическими выражениями вместо `IF` без `ELSE`.
+Сложность iec_checker 0.4 считает завышенно: на синтетическом примере одна конструкция
+`IF … ELSE … END_IF` прибавляет 5 (проверено при разборе примера шаблона, версия 0.1.0).
 
 ### Если анализируются и тесты (`assemble --tests`)
 
 | Правило | Файл | Находка | Решение / обоснование |
 |---|---|---|---|
-| UnusedVariable | `FB_F_Clamp_Test`: `R_LOW`, `R_HIGH`, `R_INSIDE`, `R_BELOW`, `R_ABOVE`, `R_DELTA`; `FB_Example_Test`: `R_SP_PCT`, `R_HYST_PCT`, … `UDI_TWO_SWITCH_ONS` (10) | «Found unused local variable» | Артефакт понижения: константы набора (`VAR CONSTANT`) используются в методах-тестах, которые сборка выносит в отдельные функции |
-| UnusedVariable | `FB_Example_Test`: `fbDut` в 10 методах | то же | Ложное срабатывание, как для `stCmd`/`stSts` в `PRG_Main`: экземпляр используется вызовом `fbDut(...)`, чтением выходов и вызовом методов, iec_checker 0.4 это использованием не считает (в методе, где `fbDut` присваивается интерфейсу, находки нет) |
-| UnusedVariable | `PRG_Tests`: `fbF_ClampTest`, `fbExampleTest` | то же | Ложное срабатывание: экземпляры используются вызовом `AreAllTestsFinished()` и регистрируются в coUnit самим объявлением |
-| PLCOPEN-CP9 | `FB_F_Clamp_Test` (1), `FB_Example_Test` (14) | «Code is too complex (16…40 McCabe complexity)», «(33…48 statements)» | Обосновано: в наборах и методах-тестах нет ветвлений (классическая сложность — 1), это последовательности вызовов и проверок; завышенный подсчёт iec_checker. Для тестов метрика не показательна |
-| PLCOPEN-CP3 | `FB_F_Clamp_Test`, `FB_Example_Test`, `PRG_Tests` (25) | как выше | Обосновано, как для `src/`: результаты и экземпляры получают значения до чтения |
+| UnusedVariable | `FB_ProjectCfg_Test`: константы набора `W_NO_ERRORS`, `T_MIN_STOP_PROJECT`, … `R_EXACT` (11) | «Found unused local variable» | Артефакт понижения: константы набора (`VAR CONSTANT`) используются в методах-тестах, которые сборка выносит в отдельные функции |
+| UnusedVariable | `FB_ProjectCfg_Test.CheckCfg`: `sDevice`, `stCommon` | то же | Ложное срабатывание: вход используется в `CONCAT(sDevice, …)`, структура — чтением полей `stCommon.wCfgErr` и `stCommon.wStatus`; обращения к полям iec_checker 0.4 использованием не считает |
+| UnusedVariable | `PRG_Tests`: `fbProjectCfgTest` | то же | Ложное срабатывание: экземпляр используется вызовом `AreAllTestsFinished()` и регистрируется в coUnit самим объявлением |
+| PLCOPEN-CP9 | `FB_ProjectCfg_Test` и его методы (6) | «Code is too complex», «… statements» | Обосновано: в наборе и методах-тестах нет ветвлений (классическая сложность — 1), это последовательности вызовов и проверок — 30 проверок Cfg устройств подряд; для тестов метрика не показательна |
+| PLCOPEN-CP3 | `FB_ProjectCfg_Test`, `PRG_Tests` (4) | как выше | Обосновано, как для `src/` |
 
 ## RuSTy (`plc --check`)
 
-Компилятор RuSTy 1.0.6 проверяет синтаксис и типы варианта сборки `rusty` (`src/` и `tests/`); компоновки
-нет. Пространства имён `coUnit.`/`CfUnit.` убираются, объявления coUnit и блоков CODESYS Standard берутся
-из прокладок `tools/check/rusty_shims/` (сигнатуры — по исследованию API, с CODESYS не сверялись).
-Последний прогон — в таблице выше: 0 ошибок, 0 предупреждений, исключений нет. Найденные RuSTy ошибки
-исправляются в коде; файл, который RuSTy не может разобрать из-за расширения CODESYS, заносится в
-`tools/check/rusty_exclude.txt` с причиной.
+Компилятор RuSTy 1.0.6 проверяет синтаксис и типы; компоновки нет. `src/` ссылается на plc-process-lib,
+поэтому `tests_support/check_generated_st.py --repo` объединяет раскладку с заглушкой библиотеки
+(`tests_support/pl_stub/`: DUT, константы, интерфейсы и публичные секции ФБ выпуска 1.0.0, сверены с
+исходниками библиотеки `tests_support/check_library.py`) и убирает пространство имён `PL.`; правки копии
+перед RuSTy и их причины — [GENERATORS.md](GENERATORS.md#проверка-st-без-codesys). `tests/` (coUnit и `PL.`)
+RuSTy не проверяет: его компилирует CODESYS (`cds.py check --tests`, `cds.py test`). Последний прогон — в
+таблице выше: 0 ошибок, 0 предупреждений. Шаблонный `tools/check/run_rusty.py` по `src/` без заглушки в
+этом репозитории не запускается: типы `PL.` ему неизвестны.
 
 ## Ограничения разборщика
 
 Конструкции CODESYS, которые iec_checker 0.4 не разбирает, — и что с ними делает вариант сборки
 `iec-checker` (подробно — [LAYOUT.md](LAYOUT.md#собранный-текст-buildassembled) и `tools/README.md`):
 
-| Конструкция | Где в примере | Как обходится |
+| Конструкция | Где | Как обходится |
 |---|---|---|
-| метки `CASE` вида `E_DeviceMode.Auto` | `FB_Example` | сборка заменяет метки целыми значениями перечисления |
-| неконстантные начальные значения (`:= E_DeviceMode.OutOfService`, `:= GVL_Const.ИМЯ`) | `FB_Example`, `ST_ExampleCmd` | сборка убирает начальное значение (отсюда часть находок CP3) |
-| `VAR_GLOBAL` вне `CONFIGURATION`, прагмы `{attribute …}` | `GVL_Const`, `E_DeviceMode` | сборка понижает |
-| методы и свойства внутри `FUNCTION_BLOCK`, `IMPLEMENTS`, `EXTENDS` | `FB_Example`, `FB_F_Clamp_Test`, `FB_Example_Test` | сборка выносит методы в функции `<ФБ>__<метод>` — анализ методов приблизительный |
+| неконстантные начальные значения (инициализаторы Cfg с `PL.E_…`, `T#…`, массивы структур) | `GVL_Persist`, `GVL_CfgProject` | сборка убирает начальное значение (отсюда часть находок CP3) |
+| `VAR_GLOBAL` вне `CONFIGURATION`, прагмы `{attribute …}`, объект Persistent Variables | все GVL `src/GVLs/Generated` | сборка понижает |
+| типы и ФБ библиотеки с пространством имён (`PL.FB_MotorVfd`, `PL.ST_PidCfg`) | `GVL_Devices`, `GVL_Hmi`, `GVL_Persist`, `PRG_Devices` | сборка убирает пространство имён; объявлений библиотеки у разборщика нет — типы не проверяются (это делают RuSTy с заглушкой и CODESYS) |
+| методы внутри `FUNCTION_BLOCK`, `EXTENDS` | `FB_ProjectCfg_Test` | сборка выносит методы в функции `<ФБ>__<метод>` — анализ методов приблизительный |

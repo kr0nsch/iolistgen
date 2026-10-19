@@ -20,7 +20,11 @@
   шаблона убирает ``GVL_Имя.``), и одноимённые переменные ``GVL_Persist`` и ``GVL_CfgProject``
   дали бы дубль; в CODESYS списки с ``qualified_only`` их различают.
 
-Настоящая проверка — сборка в CODESYS 3.5.17 с библиотекой plc-process-lib (docs/MANUAL_STEPS.md).
+Ключ ``--repo`` проверяет так же раскладку ``src/`` самого репозитория (пример КНС-1, сгенерированный в
+``src/GVLs/Generated`` и ``src/POUs/Generated``, и ручной ``PRG_Main``) — без генерации.
+
+Настоящая проверка — сборка в CODESYS 3.5.17 с библиотекой plc-process-lib: ``cds.py build`` и ``cds.py check``
+(docs/MANUAL_STEPS.md, раздел 9).
 
 Нужен Python 3.11+ (инструменты шаблона). Коды выхода: 0 — все проверки прошли (RuSTy без
 компилятора с ``--optional`` — пропуск), 1 — ошибки.
@@ -66,6 +70,8 @@ class Case:
     list_file: Path
     options: dict[str, object] = field(default_factory=dict)
 
+
+REPO_CASE = "repo_src"
 
 CASES: tuple[Case, ...] = (
     Case("kns_mini", ROOT / "pytests" / "data" / "kns_mini.csv"),
@@ -188,7 +194,7 @@ def run_case(
 ) -> CaseResult:
     base = out / case.name
     result = CaseResult(case)
-    generated = generate(case, base / "generated")
+    generated = ROOT if case.name == REPO_CASE else generate(case, base / "generated")
     result.lint_errors = lint(generated)
     result.assemble_ok = assemble_ok(generated, base / "assembled-iec")
     if with_rusty:
@@ -218,6 +224,9 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="ПЕРЕЧЕНЬ",
         help="проверить код по этому перечню (опции st-codesys — по умолчанию); можно повторять",
     )
+    parser.add_argument(
+        "--repo", action="store_true", help="проверить src/ репозитория (пример КНС-1 и PRG_Main) вместо генерации"
+    )
     parser.add_argument("--no-rusty", action="store_true", help="без RuSTy: только st_lint и assemble")
     parser.add_argument("--optional", action="store_true", help="нет RuSTy — предупреждение, а не ошибка")
     parser.add_argument("--plc", help="путь к компилятору RuSTy plc")
@@ -228,7 +237,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     assemble.configure_output()
     args = build_parser().parse_args(argv)
-    if args.list:
+    if args.repo:
+        selected = [Case(REPO_CASE, ROOT / "src")]
+    elif args.list:
         selected = [Case(path.stem, path.resolve()) for path in args.list]
     else:
         selected = [case for case in CASES if not args.case or case.name in args.case]

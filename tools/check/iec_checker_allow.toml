@@ -22,44 +22,38 @@ reason = "Как для src/: значения по умолчанию типо�
 
 [[allow]]
 id = "PLCOPEN-CP9"
-file = "src/POUs/FB_Example/*"
-reason = "Сложность тела FB_Example по классической метрике — 8; iec_checker 0.4 считает её завышенно (docs/STATIC_ANALYSIS.md)"
+file = "src/POUs/Generated/*"
+reason = "Код, сгенерированный iolistgen по перечню КНС-1: линейная последовательность вызовов устройств и присваиваний Cfg без ветвлений (одно IF — команда HMI «применить уставки проекта»); iec_checker 0.4 считает каждое обращение к экземпляру и присваивание, число растёт с числом устройств перечня"
 
 [[allow]]
 id = "PLCOPEN-CP9"
 file = "tests/*"
-reason = "Наборы тестов — последовательные вызовы без ветвлений (классическая сложность — 1); завышенный подсчёт iec_checker 0.4, метрика для тестов не показательна"
+reason = "Наборы тестов — последовательные вызовы и проверки без ветвлений (классическая сложность — 1); завышенный подсчёт iec_checker 0.4, метрика для тестов не показательна"
 
 [[allow]]
 id = "PLCOPEN-L17"
-file = "src/POUs/FB_Example/FB_Example.impl.st"
-reason = "Действия «иначе» нет: в зоне гистерезиса выход сохраняет состояние, без фронта счётчик не меняется"
+file = "src/POUs/Generated/PRG_Devices/PRG_Devices.impl.st"
+reason = "Команда HMI «применить уставки проекта» не пришла — делать нечего; пустая ветка ELSE в сгенерированном коде только добавит шум"
+
+[[allow]]
+id = "UnusedVariable"
+file = "tests/POUs/FB_ProjectCfg_Test/CheckCfg.method.decl.st"
+match = "SDEVICE|STCOMMON"
+reason = "Ложное срабатывание iec_checker 0.4: вход метода используется в CONCAT(sDevice, ...), структура — чтением полей stCommon.wCfgErr и stCommon.wStatus"
+
+[[allow]]
+id = "UnusedVariable"
+file = "tests/POUs/PRG_Tests/PRG_Tests.decl.st"
+match = "FBPROJECTCFGTEST"
+reason = "Экземпляр набора регистрируется в coUnit самим объявлением и используется вызовом AreAllTestsFinished()"
 
 [[allow]]
 id = "PLCOPEN-L17"
 file = "src/POUs/PRG_Main/PRG_Main.impl.st"
-reason = "Однократная команда HMI не пришла — делать нечего; пустая ветка ELSE только добавит шум"
-
-[[allow]]
-id = "UnusedVariable"
-file = "src/POUs/PRG_Main/PRG_Main.decl.st"
-match = "STCMD|STSTS"
-reason = "Ложное срабатывание iec_checker 0.4: обращения к полям структуры (stCmd.xAck, stSts.xOut) он не считает использованием"
+reason = "Задание оператора восстанавливается из GVL_Persist один раз после старта; в остальных циклах делать нечего, пустая ветка ELSE только добавит шум"
 
 [[allow]]
 id = "UnusedVariable"
 file = "tests/POUs/*_Test/*_Test.decl.st"
 match = "variable: [A-Z][A-Z0-9]*(_[A-Z0-9]+)+$"
 reason = "Артефакт понижения: константы набора (VAR CONSTANT, UPPER_SNAKE_CASE) используются в методах-тестах, которые сборка выносит в отдельные функции"
-
-[[allow]]
-id = "UnusedVariable"
-file = "tests/POUs/FB_Example_Test/*.method.decl.st"
-match = "FBDUT"
-reason = "Ложное срабатывание iec_checker 0.4: экземпляр ФБ используется вызовом fbDut(...), чтением выходов и вызовом методов — это он не считает использованием (как stCmd/stSts в PRG_Main)"
-
-[[allow]]
-id = "UnusedVariable"
-file = "tests/POUs/PRG_Tests/PRG_Tests.decl.st"
-match = "FBF_CLAMPTEST|FBEXAMPLETEST"
-reason = "Экземпляры наборов регистрируются в coUnit самим объявлением и используются вызовом AreAllTestsFinished()"
