@@ -1,9 +1,27 @@
-# iolistgen
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/media/banner-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/media/banner-light.svg">
+    <img alt="Баннер iolistgen: строки перечня сигналов КНС-1 (LT101, PT201, LS102, P101_RUN, IT111) превращаются в объявления GVL_IO, карты Modbus и теги SCADA" src="docs/media/banner-light.svg" width="100%">
+  </picture>
+</p>
 
-[![CI](https://github.com/kr0nsch/iolistgen/actions/workflows/ci.yml/badge.svg)](https://github.com/kr0nsch/iolistgen/actions/workflows/ci.yml)
-[![Лицензия MIT](https://img.shields.io/badge/license-MIT-56677D?style=flat-square&labelColor=1B2736)](LICENSE)
-![CODESYS 3.5.17](https://img.shields.io/badge/CODESYS-3.5.17-FF7A1A?style=flat-square&labelColor=1B2736)
-![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3A4B60?style=flat-square&logo=python&logoColor=white)
+<p align="center">
+  <a href="https://github.com/kr0nsch/iolistgen/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/kr0nsch/iolistgen/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="LICENSE"><img alt="Лицензия MIT" src="https://img.shields.io/badge/license-MIT-56677D?style=flat-square&labelColor=1B2736"></a>
+  <img alt="CODESYS 3.5.17" src="https://img.shields.io/badge/CODESYS-3.5.17-C2410C?style=flat-square&labelColor=1B2736">
+  <img alt="IEC 61131-3" src="https://img.shields.io/badge/IEC%2061131--3-56677D?style=flat-square">
+  <a href="#тесты-и-проверки"><img alt="Тесты локального прогона 19.10.2026: coUnit 4 из 4 в CODESYS Control Win, pytest 1483" src="https://img.shields.io/badge/tests-coUnit%204%2F4%20%C2%B7%20pytest%201483-3A4B60?style=flat-square&labelColor=1B2736"></a>
+  <img alt="Язык: Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3A4B60?style=flat-square&logo=python&logoColor=white">
+</p>
+
+<p align="center">
+  <a href="#демонстрация">Демо</a> ·
+  <a href="#архитектура">Архитектура</a> ·
+  <a href="#быстрый-старт">Быстрый старт</a> ·
+  <a href="docs/">Документация</a> ·
+  <a href="#summary-en">Summary (EN)</a>
+</p>
 
 Перечень сигналов — исходные данные любого проекта АСУ ТП, и при ручном заведении сотен сигналов
 ошибки неизбежны: дубли тегов, перепутанные шкалы, пересекающиеся адреса Modbus, насос без
@@ -16,6 +34,25 @@
 
 ## Демонстрация
 
+Всё ниже снято 19.10.2026 с реальных прогонов iolistgen 0.2.0 в клоне репозитория (Windows 11,
+PowerShell). Вывод команд — как есть, макетов нет; HTML-отчёт — снимок файла, который записала
+вторая команда второй записи.
+
+**Перечень КНС-1 → код ПЛК и карты обмена** — проверка книги Excel и генерация всех файлов:
+
+<p align="center">
+  <img alt="Терминал PowerShell: iolistgen validate examples/kns/io_list.xlsx — 58 сигналов, 30 устройств, ошибок нет; generate записывает 17 файлов: ST, карты Modbus, импорт SCADA, тревоги, перечень" src="docs/media/demo-generate-kns.gif" width="900">
+</p>
+<p align="center"><sub>Реальный прогон, Windows PowerShell, снято term2gif.py</sub></p>
+
+**Перечень с ошибками** — у каждого сообщения строка, колонка, правило и способ исправления; по
+такому перечню генерация отменяется:
+
+<p align="center">
+  <img alt="Терминал PowerShell: iolistgen validate по перечню с ошибками — строка, колонка, код правила и как исправить; итог 12 ошибок и 3 предупреждения, HTML-отчёт; generate отменён" src="docs/media/demo-validate-errors.gif" width="900">
+</p>
+<p align="center"><sub>Реальный прогон по учебному перечню <code>pytests/data/kns_errors.csv</code>; вывод первой команды обрезан <code>Select-Object -First 6</code> — 3 сообщения из 15</sub></p>
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/media/shot-validation-report-dark.png">
@@ -23,13 +60,20 @@
     <img alt="HTML-отчёт проверки перечня: итог «12 ошибок, 3 предупреждения», сводка по сигналам и устройствам, таблица сообщений с местом в файле, тегом и способом исправления" src="docs/media/shot-validation-report-light.png" width="900">
   </picture>
 </p>
-<p align="center"><sub>Отчёт <code>iolistgen validate --report html</code> по учебному перечню с ошибками <code>pytests/data/kns_errors.csv</code>, версия 0.1.0</sub></p>
+<p align="center"><sub>Отчёт <code>iolistgen validate --report html</code> по тому же перечню, iolistgen 0.2.0, снято shot.py (верх страницы)</sub></p>
 
-> _Плейсхолдер: GIF «перечень КНС-1 в Excel → `iolistgen validate` → `iolistgen generate` →
-> `cds.py build` в CODESYS 3.5.17» — записать по шагам [MANUAL_STEPS.md](docs/MANUAL_STEPS.md#9-код-сгенерированный-iolistgen-в-проекте-codesys)
-> (сборка проверена 19.10.2026, запись экрана ещё не сделана)._
+**`src/` — вывод генератора** — повторная генерация кода КНС-1 в корень репозитория ничего не
+меняет, а `src/` вместе с заглушкой plc-process-lib проходит линтер и RuSTy:
 
-## Как это работает
+<p align="center">
+  <img alt="Терминал PowerShell: повторная генерация src/ по перечню КНС-1 — 10 файлов без изменений; check_generated_st.py --repo — st_lint без замечаний, RuSTy: 71 файл без ошибок" src="docs/media/demo-check-src.gif" width="900">
+</p>
+<p align="center"><sub>Реальный прогон, Windows PowerShell, снято term2gif.py; домашний каталог в пути журнала заменён на <code>~</code></sub></p>
+
+Сборка того же `src/` в CODESYS 3.5.17.30 с настоящей библиотекой — таблицей в разделе
+[«Сборка в CODESYS»](#сборка-в-codesys); запись экрана IDE не делалась.
+
+## Архитектура
 
 ```mermaid
 flowchart LR
@@ -218,6 +262,11 @@ Excel читается так, как его видит человек: объе
 
 ## Тесты и проверки
 
+[![CI](https://github.com/kr0nsch/iolistgen/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kr0nsch/iolistgen/actions/workflows/ci.yml)
+
+Локальный прогон 19.10.2026: `python -m pytest` — 1483 теста пройдены, пропущенных нет (интеграционные —
+с настоящими RuSTy, iec_checker и исходниками plc-process-lib рядом). Что проверяется:
+
 | Проверка | Где | Что |
 |---|---|---|
 | pytest `pytests/` | CI, Python 3.10, 3.12, 3.13 | каждое правило — срабатывание и тишина на исправленном перечне; каждое ослабляемое правило, отключённое на перечне, где оно срабатывает, не ломает модель; загрузчики CSV и XLSX (разделители, BOM, cp1251, многострочные ячейки, объединённые ячейки, числа Excel); Cfg и зеркало CheckConfig; отчёты; плагины; CLI, в том числе «генерация целиком или никак»; property-based тесты hypothesis: поиск пересечений Modbus против полного перебора |
@@ -246,7 +295,8 @@ python tests_support/check_library.py           # каталог против и
 примеру контракта 17.3, задание оператора в `GVL_Persist`, вызов `PRG_Devices`. Библиотека
 закреплена в `tools/codesys/config.json`: `plc-process-lib, 1.0.0.0 (plc-portfolio)`, при отсутствии
 `cds.py` собирает её в соседнем репозитории (`build_from_repo`). Проверено 19.10.2026 в CODESYS
-3.5.17.30 и CODESYS Control Win V3:
+3.5.17.30 и CODESYS Control Win V3 на коммите `bd9bc16` (после него в `src/` и `tests/` менялась только
+строка «Автор» в заголовках `PRG_Main` и тестов):
 
 | Команда | Итог |
 |---|---|
@@ -322,3 +372,12 @@ pytest and hypothesis in CI.
 ## Лицензия
 
 [MIT](LICENSE) © 2026 kr0nsch
+
+---
+
+<p align="center"><b>Портфолио АСУ ТП</b></p>
+<table>
+<tr><td width="33%"><a href="https://github.com/kr0nsch/plc-repo-template">01 · plc-repo-template</a><br><sub>ST в git, сборка проекта скриптом, CI</sub></td><td width="33%"><a href="https://github.com/kr0nsch/plc-process-lib">02 · plc-process-lib</a><br><sub>ФБ: AI, двигатель, ПЧ, задвижка, ПИД, тревоги</sub></td><td width="33%"><span data-repo="kns-pump-station">03 · kns-pump-station</span> <sub>(готовится)</sub><br><sub>флагман: КНС, три насоса с ПЧ, модель, HMI</sub></td></tr>
+<tr><td width="33%"><span data-repo="kns-port-domestic">04 · kns-port-domestic</span> <sub>(готовится)</sub><br><sub>перенос на Astra.IDE / MasterSCADA 4D</sub></td><td width="33%"><span data-repo="plc-iiot-stack">05 · plc-iiot-stack</span> <sub>(готовится)</sub><br><sub>OPC UA / MQTT → InfluxDB → Grafana</sub></td><td width="33%"><a href="https://github.com/kr0nsch/iolistgen"><b>06 · iolistgen</b></a><br><sub>перечень сигналов → ST, карты Modbus, SCADA</sub></td></tr>
+<tr><td width="33%"><a href="https://github.com/kr0nsch/plc-ci-toolkit">07 · plc-ci-toolkit</a><br><sub>линтеры, сборка CODESYS, тесты, JUnit</sub></td><td width="33%"><a href="https://github.com/kr0nsch/s7-to-codesys">08 · s7-to-codesys</a><br><sub>конвертер SCL → ST с отчётом о переносе</sub></td><td width="33%"><a href="https://github.com/kr0nsch/sis-interlock-demo">09 · sis-interlock-demo</a><br><sub>ПАЗ: MooN, матрица причин и следствий</sub></td></tr>
+</table>
