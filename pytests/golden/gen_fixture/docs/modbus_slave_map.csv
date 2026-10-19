@@ -12,10 +12,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 1;LT201;AnalogInput;3;4x;7;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbLT201.stSts.stCommon.uiCmdSeq
 1;LT201;AnalogInput;3;4x;8;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbLT201.stSts.stCommon.wAlmActive
 1;LT201;AnalogInput;3;4x;9;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbLT201.stSts.stCommon.wAlmUnack
-1;LT201;AnalogInput;3;4x;10;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbLT201.stSts.stCommon.wAlmShelved
+1;LT201;AnalogInput;3;4x;10;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbLT201.stSts.stCommon.wAlmShelved
 1;LT201;AnalogInput;3;4x;11;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbLT201.stSts.stCommon.ePrioUnack
 1;LT201;AnalogInput;3;4x;12;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbLT201.stSts.stCommon.eDevType
-1;LT201;AnalogInput;3;4x;13;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbLT201.stSts.stCommon.wReserve
+1;LT201;AnalogInput;3;4x;13;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbLT201.stSts.stCommon.wAlmSuppressed
 1;LT201;AnalogInput;3;4x;14;14;2;REAL;LH;stSts.rValue_eu;итоговое значение;;Application.GVL_Devices.fbLT201.stSts.rValue_eu
 1;LT201;AnalogInput;3;4x;16;16;2;REAL;LH;stSts.rValue_pct;значение, % шкалы;%;Application.GVL_Devices.fbLT201.stSts.rValue_pct
 1;LT201;AnalogInput;3;4x;18;18;2;REAL;LH;stSts.rIn;сырое значение входа;;Application.GVL_Devices.fbLT201.stSts.rIn
@@ -31,10 +31,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 2;PT201;AnalogInput;3;4x;29;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbPT201.stSts.stCommon.uiCmdSeq
 2;PT201;AnalogInput;3;4x;30;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbPT201.stSts.stCommon.wAlmActive
 2;PT201;AnalogInput;3;4x;31;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbPT201.stSts.stCommon.wAlmUnack
-2;PT201;AnalogInput;3;4x;32;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbPT201.stSts.stCommon.wAlmShelved
+2;PT201;AnalogInput;3;4x;32;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbPT201.stSts.stCommon.wAlmShelved
 2;PT201;AnalogInput;3;4x;33;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbPT201.stSts.stCommon.ePrioUnack
 2;PT201;AnalogInput;3;4x;34;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbPT201.stSts.stCommon.eDevType
-2;PT201;AnalogInput;3;4x;35;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbPT201.stSts.stCommon.wReserve
+2;PT201;AnalogInput;3;4x;35;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbPT201.stSts.stCommon.wAlmSuppressed
 2;PT201;AnalogInput;3;4x;36;14;2;REAL;LH;stSts.rValue_eu;итоговое значение;;Application.GVL_Devices.fbPT201.stSts.rValue_eu
 2;PT201;AnalogInput;3;4x;38;16;2;REAL;LH;stSts.rValue_pct;значение, % шкалы;%;Application.GVL_Devices.fbPT201.stSts.rValue_pct
 2;PT201;AnalogInput;3;4x;40;18;2;REAL;LH;stSts.rIn;сырое значение входа;;Application.GVL_Devices.fbPT201.stSts.rIn
@@ -50,10 +50,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 3;TE201;AnalogInput;3;4x;51;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbTE201.stSts.stCommon.uiCmdSeq
 3;TE201;AnalogInput;3;4x;52;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbTE201.stSts.stCommon.wAlmActive
 3;TE201;AnalogInput;3;4x;53;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbTE201.stSts.stCommon.wAlmUnack
-3;TE201;AnalogInput;3;4x;54;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbTE201.stSts.stCommon.wAlmShelved
+3;TE201;AnalogInput;3;4x;54;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbTE201.stSts.stCommon.wAlmShelved
 3;TE201;AnalogInput;3;4x;55;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbTE201.stSts.stCommon.ePrioUnack
 3;TE201;AnalogInput;3;4x;56;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbTE201.stSts.stCommon.eDevType
-3;TE201;AnalogInput;3;4x;57;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbTE201.stSts.stCommon.wReserve
+3;TE201;AnalogInput;3;4x;57;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbTE201.stSts.stCommon.wAlmSuppressed
 3;TE201;AnalogInput;3;4x;58;14;2;REAL;LH;stSts.rValue_eu;итоговое значение;;Application.GVL_Devices.fbTE201.stSts.rValue_eu
 3;TE201;AnalogInput;3;4x;60;16;2;REAL;LH;stSts.rValue_pct;значение, % шкалы;%;Application.GVL_Devices.fbTE201.stSts.rValue_pct
 3;TE201;AnalogInput;3;4x;62;18;2;REAL;LH;stSts.rIn;сырое значение входа;;Application.GVL_Devices.fbTE201.stSts.rIn
@@ -69,10 +69,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 4;LS201;DigitalInput;3;4x;73;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbLS201.stSts.stCommon.uiCmdSeq
 4;LS201;DigitalInput;3;4x;74;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbLS201.stSts.stCommon.wAlmActive
 4;LS201;DigitalInput;3;4x;75;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbLS201.stSts.stCommon.wAlmUnack
-4;LS201;DigitalInput;3;4x;76;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbLS201.stSts.stCommon.wAlmShelved
+4;LS201;DigitalInput;3;4x;76;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbLS201.stSts.stCommon.wAlmShelved
 4;LS201;DigitalInput;3;4x;77;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbLS201.stSts.stCommon.ePrioUnack
 4;LS201;DigitalInput;3;4x;78;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbLS201.stSts.stCommon.eDevType
-4;LS201;DigitalInput;3;4x;79;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbLS201.stSts.stCommon.wReserve
+4;LS201;DigitalInput;3;4x;79;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbLS201.stSts.stCommon.wAlmSuppressed
 4;LS201;DigitalInput;3;4x;80;14;1;UINT;;stSts.uiSubstRemain_s;до автоматического снятия подмены;с;Application.GVL_Devices.fbLS201.stSts.uiSubstRemain_s
 5;ES201;DigitalInput;3;4x;81;0;1;WORD;;stSts.stCommon.wStatus;слово состояния: биты 0–7 по типу, 8–15 общие;;Application.GVL_Devices.fbES201.stSts.stCommon.wStatus
 5;ES201;DigitalInput;3;4x;82;1;1;WORD;;stSts.stCommon.wFault;причины отказа (карта по типу);;Application.GVL_Devices.fbES201.stSts.stCommon.wFault
@@ -84,10 +84,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 5;ES201;DigitalInput;3;4x;88;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbES201.stSts.stCommon.uiCmdSeq
 5;ES201;DigitalInput;3;4x;89;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbES201.stSts.stCommon.wAlmActive
 5;ES201;DigitalInput;3;4x;90;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbES201.stSts.stCommon.wAlmUnack
-5;ES201;DigitalInput;3;4x;91;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbES201.stSts.stCommon.wAlmShelved
+5;ES201;DigitalInput;3;4x;91;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbES201.stSts.stCommon.wAlmShelved
 5;ES201;DigitalInput;3;4x;92;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbES201.stSts.stCommon.ePrioUnack
 5;ES201;DigitalInput;3;4x;93;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbES201.stSts.stCommon.eDevType
-5;ES201;DigitalInput;3;4x;94;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbES201.stSts.stCommon.wReserve
+5;ES201;DigitalInput;3;4x;94;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbES201.stSts.stCommon.wAlmSuppressed
 5;ES201;DigitalInput;3;4x;95;14;1;UINT;;stSts.uiSubstRemain_s;до автоматического снятия подмены;с;Application.GVL_Devices.fbES201.stSts.uiSubstRemain_s
 6;PWR2;DigitalInput;3;4x;96;0;1;WORD;;stSts.stCommon.wStatus;слово состояния: биты 0–7 по типу, 8–15 общие;;Application.GVL_Devices.fbPWR2.stSts.stCommon.wStatus
 6;PWR2;DigitalInput;3;4x;97;1;1;WORD;;stSts.stCommon.wFault;причины отказа (карта по типу);;Application.GVL_Devices.fbPWR2.stSts.stCommon.wFault
@@ -99,10 +99,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 6;PWR2;DigitalInput;3;4x;103;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbPWR2.stSts.stCommon.uiCmdSeq
 6;PWR2;DigitalInput;3;4x;104;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbPWR2.stSts.stCommon.wAlmActive
 6;PWR2;DigitalInput;3;4x;105;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbPWR2.stSts.stCommon.wAlmUnack
-6;PWR2;DigitalInput;3;4x;106;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbPWR2.stSts.stCommon.wAlmShelved
+6;PWR2;DigitalInput;3;4x;106;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbPWR2.stSts.stCommon.wAlmShelved
 6;PWR2;DigitalInput;3;4x;107;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbPWR2.stSts.stCommon.ePrioUnack
 6;PWR2;DigitalInput;3;4x;108;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbPWR2.stSts.stCommon.eDevType
-6;PWR2;DigitalInput;3;4x;109;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbPWR2.stSts.stCommon.wReserve
+6;PWR2;DigitalInput;3;4x;109;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbPWR2.stSts.stCommon.wAlmSuppressed
 6;PWR2;DigitalInput;3;4x;110;14;1;UINT;;stSts.uiSubstRemain_s;до автоматического снятия подмены;с;Application.GVL_Devices.fbPWR2.stSts.uiSubstRemain_s
 11;M201;Motor;3;4x;111;0;1;WORD;;stSts.stCommon.wStatus;слово состояния: биты 0–7 по типу, 8–15 общие;;Application.GVL_Devices.fbM201.stSts.stCommon.wStatus
 11;M201;Motor;3;4x;112;1;1;WORD;;stSts.stCommon.wFault;причины отказа (карта по типу);;Application.GVL_Devices.fbM201.stSts.stCommon.wFault
@@ -114,10 +114,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 11;M201;Motor;3;4x;118;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbM201.stSts.stCommon.uiCmdSeq
 11;M201;Motor;3;4x;119;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbM201.stSts.stCommon.wAlmActive
 11;M201;Motor;3;4x;120;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbM201.stSts.stCommon.wAlmUnack
-11;M201;Motor;3;4x;121;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbM201.stSts.stCommon.wAlmShelved
+11;M201;Motor;3;4x;121;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbM201.stSts.stCommon.wAlmShelved
 11;M201;Motor;3;4x;122;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbM201.stSts.stCommon.ePrioUnack
 11;M201;Motor;3;4x;123;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbM201.stSts.stCommon.eDevType
-11;M201;Motor;3;4x;124;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbM201.stSts.stCommon.wReserve
+11;M201;Motor;3;4x;124;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbM201.stSts.stCommon.wAlmSuppressed
 11;M201;Motor;3;4x;125;14;1;INT;;stSts.eState;состояние: 0 стоп, 1 пуск, 2 работа, 3 останов, 4 отказ;;Application.GVL_Devices.fbM201.stSts.eState
 11;M201;Motor;3;4x;126;15;1;WORD;;stSts.wInterlock;действующие блокировки;;Application.GVL_Devices.fbM201.stSts.wInterlock
 11;M201;Motor;3;4x;127;16;1;WORD;;stSts.wPermitMissing;недостающие разрешения;;Application.GVL_Devices.fbM201.stSts.wPermitMissing
@@ -141,10 +141,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 12;P201;MotorVfd;3;4x;152;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbP201.stSts.stCommon.uiCmdSeq
 12;P201;MotorVfd;3;4x;153;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbP201.stSts.stCommon.wAlmActive
 12;P201;MotorVfd;3;4x;154;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbP201.stSts.stCommon.wAlmUnack
-12;P201;MotorVfd;3;4x;155;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbP201.stSts.stCommon.wAlmShelved
+12;P201;MotorVfd;3;4x;155;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbP201.stSts.stCommon.wAlmShelved
 12;P201;MotorVfd;3;4x;156;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbP201.stSts.stCommon.ePrioUnack
 12;P201;MotorVfd;3;4x;157;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbP201.stSts.stCommon.eDevType
-12;P201;MotorVfd;3;4x;158;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbP201.stSts.stCommon.wReserve
+12;P201;MotorVfd;3;4x;158;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbP201.stSts.stCommon.wAlmSuppressed
 12;P201;MotorVfd;3;4x;159;14;1;INT;;stSts.eState;состояние: 0 стоп, 1 пуск, 2 работа, 3 останов, 4 отказ;;Application.GVL_Devices.fbP201.stSts.eState
 12;P201;MotorVfd;3;4x;160;15;1;WORD;;stSts.wInterlock;действующие блокировки;;Application.GVL_Devices.fbP201.stSts.wInterlock
 12;P201;MotorVfd;3;4x;161;16;1;WORD;;stSts.wPermitMissing;недостающие разрешения;;Application.GVL_Devices.fbP201.stSts.wPermitMissing
@@ -168,10 +168,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 13;P202;MotorVfd;3;4x;186;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbP202.stSts.stCommon.uiCmdSeq
 13;P202;MotorVfd;3;4x;187;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbP202.stSts.stCommon.wAlmActive
 13;P202;MotorVfd;3;4x;188;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbP202.stSts.stCommon.wAlmUnack
-13;P202;MotorVfd;3;4x;189;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbP202.stSts.stCommon.wAlmShelved
+13;P202;MotorVfd;3;4x;189;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbP202.stSts.stCommon.wAlmShelved
 13;P202;MotorVfd;3;4x;190;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbP202.stSts.stCommon.ePrioUnack
 13;P202;MotorVfd;3;4x;191;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbP202.stSts.stCommon.eDevType
-13;P202;MotorVfd;3;4x;192;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbP202.stSts.stCommon.wReserve
+13;P202;MotorVfd;3;4x;192;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbP202.stSts.stCommon.wAlmSuppressed
 13;P202;MotorVfd;3;4x;193;14;1;INT;;stSts.eState;состояние: 0 стоп, 1 пуск, 2 работа, 3 останов, 4 отказ;;Application.GVL_Devices.fbP202.stSts.eState
 13;P202;MotorVfd;3;4x;194;15;1;WORD;;stSts.wInterlock;действующие блокировки;;Application.GVL_Devices.fbP202.stSts.wInterlock
 13;P202;MotorVfd;3;4x;195;16;1;WORD;;stSts.wPermitMissing;недостающие разрешения;;Application.GVL_Devices.fbP202.stSts.wPermitMissing
@@ -195,10 +195,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 21;FV201;Valve;3;4x;220;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbFV201.stSts.stCommon.uiCmdSeq
 21;FV201;Valve;3;4x;221;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbFV201.stSts.stCommon.wAlmActive
 21;FV201;Valve;3;4x;222;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbFV201.stSts.stCommon.wAlmUnack
-21;FV201;Valve;3;4x;223;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbFV201.stSts.stCommon.wAlmShelved
+21;FV201;Valve;3;4x;223;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbFV201.stSts.stCommon.wAlmShelved
 21;FV201;Valve;3;4x;224;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbFV201.stSts.stCommon.ePrioUnack
 21;FV201;Valve;3;4x;225;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbFV201.stSts.stCommon.eDevType
-21;FV201;Valve;3;4x;226;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbFV201.stSts.stCommon.wReserve
+21;FV201;Valve;3;4x;226;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbFV201.stSts.stCommon.wAlmSuppressed
 21;FV201;Valve;3;4x;227;14;1;INT;;stSts.eState;состояние: 1 закрыта, 2 открывается, 3 открыта, 4 закрывается, 7 отказ;;Application.GVL_Devices.fbFV201.stSts.eState
 21;FV201;Valve;3;4x;228;15;1;WORD;;stSts.wInterlock;действующие блокировки;;Application.GVL_Devices.fbFV201.stSts.wInterlock
 21;FV201;Valve;3;4x;229;16;1;WORD;;stSts.wPermitMissing;недостающие разрешения для текущего направления;;Application.GVL_Devices.fbFV201.stSts.wPermitMissing
@@ -218,10 +218,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 22;XV201;Valve;3;4x;246;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbXV201.stSts.stCommon.uiCmdSeq
 22;XV201;Valve;3;4x;247;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbXV201.stSts.stCommon.wAlmActive
 22;XV201;Valve;3;4x;248;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbXV201.stSts.stCommon.wAlmUnack
-22;XV201;Valve;3;4x;249;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbXV201.stSts.stCommon.wAlmShelved
+22;XV201;Valve;3;4x;249;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbXV201.stSts.stCommon.wAlmShelved
 22;XV201;Valve;3;4x;250;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbXV201.stSts.stCommon.ePrioUnack
 22;XV201;Valve;3;4x;251;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbXV201.stSts.stCommon.eDevType
-22;XV201;Valve;3;4x;252;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbXV201.stSts.stCommon.wReserve
+22;XV201;Valve;3;4x;252;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbXV201.stSts.stCommon.wAlmSuppressed
 22;XV201;Valve;3;4x;253;14;1;INT;;stSts.eState;состояние: 1 закрыта, 2 открывается, 3 открыта, 4 закрывается, 7 отказ;;Application.GVL_Devices.fbXV201.stSts.eState
 22;XV201;Valve;3;4x;254;15;1;WORD;;stSts.wInterlock;действующие блокировки;;Application.GVL_Devices.fbXV201.stSts.wInterlock
 22;XV201;Valve;3;4x;255;16;1;WORD;;stSts.wPermitMissing;недостающие разрешения для текущего направления;;Application.GVL_Devices.fbXV201.stSts.wPermitMissing
@@ -241,10 +241,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 31;FCV201;ControlValve;3;4x;272;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbFCV201.stSts.stCommon.uiCmdSeq
 31;FCV201;ControlValve;3;4x;273;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbFCV201.stSts.stCommon.wAlmActive
 31;FCV201;ControlValve;3;4x;274;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbFCV201.stSts.stCommon.wAlmUnack
-31;FCV201;ControlValve;3;4x;275;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbFCV201.stSts.stCommon.wAlmShelved
+31;FCV201;ControlValve;3;4x;275;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbFCV201.stSts.stCommon.wAlmShelved
 31;FCV201;ControlValve;3;4x;276;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbFCV201.stSts.stCommon.ePrioUnack
 31;FCV201;ControlValve;3;4x;277;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbFCV201.stSts.stCommon.eDevType
-31;FCV201;ControlValve;3;4x;278;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbFCV201.stSts.stCommon.wReserve
+31;FCV201;ControlValve;3;4x;278;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbFCV201.stSts.stCommon.wAlmSuppressed
 31;FCV201;ControlValve;3;4x;279;14;2;REAL;LH;stSts.rPosSp_pct;задание после пределов, до рампы;%;Application.GVL_Devices.fbFCV201.stSts.rPosSp_pct
 31;FCV201;ControlValve;3;4x;281;16;2;REAL;LH;stSts.rOut_pct;выход;%;Application.GVL_Devices.fbFCV201.stSts.rOut_pct
 31;FCV201;ControlValve;3;4x;283;18;2;REAL;LH;stSts.rOut_mA;выход на AO;мА;Application.GVL_Devices.fbFCV201.stSts.rOut_mA
@@ -262,10 +262,10 @@ dev_no;device;device_type;function;area;address;offset;length;data_type;word_ord
 32;ZT201;AnalogInput;3;4x;298;7;1;UINT;;stSts.stCommon.uiCmdSeq;счётчик обработанных команд (по кругу);;Application.GVL_Devices.fbZT201.stSts.stCommon.uiCmdSeq
 32;ZT201;AnalogInput;3;4x;299;8;1;WORD;;stSts.stCommon.wAlmActive;бит i: условие тревоги слота i активно;;Application.GVL_Devices.fbZT201.stSts.stCommon.wAlmActive
 32;ZT201;AnalogInput;3;4x;300;9;1;WORD;;stSts.stCommon.wAlmUnack;бит i: тревога слота i не квитирована;;Application.GVL_Devices.fbZT201.stSts.stCommon.wAlmUnack
-32;ZT201;AnalogInput;3;4x;301;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен, подавлен или выведен из работы;;Application.GVL_Devices.fbZT201.stSts.stCommon.wAlmShelved
+32;ZT201;AnalogInput;3;4x;301;10;1;WORD;;stSts.stCommon.wAlmShelved;бит i: слот отложен оператором (Shelved);;Application.GVL_Devices.fbZT201.stSts.stCommon.wAlmShelved
 32;ZT201;AnalogInput;3;4x;302;11;1;INT;;stSts.stCommon.ePrioUnack;наивысший приоритет неквитированных тревог;;Application.GVL_Devices.fbZT201.stSts.stCommon.ePrioUnack
 32;ZT201;AnalogInput;3;4x;303;12;1;INT;;stSts.stCommon.eDevType;тип устройства (проверка адресации блока);;Application.GVL_Devices.fbZT201.stSts.stCommon.eDevType
-32;ZT201;AnalogInput;3;4x;304;13;1;WORD;;stSts.stCommon.wReserve;резерв: размер кратен 4 байтам;;Application.GVL_Devices.fbZT201.stSts.stCommon.wReserve
+32;ZT201;AnalogInput;3;4x;304;13;1;WORD;;stSts.stCommon.wAlmSuppressed;бит i: слот подавлен логикой (SuppressedByDesign);;Application.GVL_Devices.fbZT201.stSts.stCommon.wAlmSuppressed
 32;ZT201;AnalogInput;3;4x;305;14;2;REAL;LH;stSts.rValue_eu;итоговое значение;;Application.GVL_Devices.fbZT201.stSts.rValue_eu
 32;ZT201;AnalogInput;3;4x;307;16;2;REAL;LH;stSts.rValue_pct;значение, % шкалы;%;Application.GVL_Devices.fbZT201.stSts.rValue_pct
 32;ZT201;AnalogInput;3;4x;309;18;2;REAL;LH;stSts.rIn;сырое значение входа;;Application.GVL_Devices.fbZT201.stSts.rIn

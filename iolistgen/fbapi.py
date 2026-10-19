@@ -1,11 +1,12 @@
 """Интерфейс ФБ библиотеки plc-process-lib: входы и выходы, структуры Cmd, Sts и Retain.
 
-Источник — контракт ``API.md`` редакции 1.0.0-rc2: разделы 4.2, 4.3, 4.6 (раскладка Sts для
-обмена), 9.1, 11.1–16.2. Здесь только то, что нужно генераторам: имена и типы входов и выходов
-экземпляров (вызовы в ``PRG_Devices``), поля команд (теги SCADA), поля состояния с их
-смещениями (карта Modbus slave и теги SCADA), энергонезависимые данные. Поля Cfg — в
-``catalog.py``. Изменение контракта библиотеки — изменение этого модуля и заглушки
-``tests_support/pl_stub/`` (их сверяет тест ``pytests/test_pl_stub.py``).
+Источник — выпуск plc-process-lib 1.0.0 (контракт ``API.md`` 1.0.0): разделы 4.1–4.3, 4.6
+(раскладка Sts для обмена), 9.1, 11.1–17.2. Здесь только то, что нужно генераторам: имена и типы
+входов и выходов экземпляров (вызовы в ``PRG_Devices``), поля команд (теги SCADA), поля состояния
+с их смещениями (карта Modbus slave и теги SCADA), энергонезависимые данные. Поля Cfg — в
+``catalog.py``. Изменение библиотеки — изменение этого модуля и заглушки ``tests_support/pl_stub/``:
+заглушку с каталогом сверяет тест ``pytests/test_pl_stub.py``, каталог и заглушку с исходниками
+библиотеки — скрипт ``tests_support/check_library.py``.
 """
 
 from __future__ import annotations
@@ -65,6 +66,21 @@ ENUMS: dict[str, tuple[tuple[str, int], ...]] = {
         ("SubstExpired", 10),
     ),
     "E_AlarmPriority": (("None", 0), ("Low", 1), ("Medium", 2), ("High", 3), ("Critical", 4)),
+    # причина перехода тревоги в событии ST_AlarmEvent (журнал I_AlarmSink, раздел 10.2)
+    "E_AlarmEventReason": (
+        ("None", 0),
+        ("Activated", 1),
+        ("Cleared", 2),
+        ("Acked", 3),
+        ("Shelved", 4),
+        ("Unshelved", 5),
+        ("ShelveExpired", 6),
+        ("Suppressed", 7),
+        ("Unsuppressed", 8),
+        ("OosOn", 9),
+        ("OosOff", 10),
+        ("Disabled", 11),
+    ),
     "E_AiSignalState": (
         ("Good", 0),
         ("UnderRange", 1),
@@ -138,10 +154,10 @@ STRUCTS: dict[str, tuple[StructField, ...]] = {
         _f("uiCmdSeq", "UINT", "счётчик обработанных команд (по кругу)"),
         _f("wAlmActive", "WORD", "бит i: условие тревоги слота i активно"),
         _f("wAlmUnack", "WORD", "бит i: тревога слота i не квитирована"),
-        _f("wAlmShelved", "WORD", "бит i: слот отложен, подавлен или выведен из работы"),
+        _f("wAlmShelved", "WORD", "бит i: слот отложен оператором (Shelved)"),
         _f("ePrioUnack", "E_AlarmPriority", "наивысший приоритет неквитированных тревог", "E_AlarmPriority.None"),
         _f("eDevType", "E_DeviceType", "тип устройства (проверка адресации блока)", "E_DeviceType.None"),
-        _f("wReserve", "WORD", "резерв: размер кратен 4 байтам"),
+        _f("wAlmSuppressed", "WORD", "бит i: слот подавлен логикой (SuppressedByDesign)"),
     ),
     "ST_DeviceRetain": (
         _f("eRemoteMode", "E_DeviceMode", "последний дистанционный режим (Auto/Manual)", "E_DeviceMode.Manual"),

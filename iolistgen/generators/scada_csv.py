@@ -93,6 +93,7 @@ _COMMON_STS = (
     Point("AlmActive", "sts", "stCommon.wAlmActive"),
     Point("AlmUnack", "sts", "stCommon.wAlmUnack"),
     Point("AlmShelved", "sts", "stCommon.wAlmShelved"),
+    Point("AlmSuppressed", "sts", "stCommon.wAlmSuppressed"),
     Point("PrioUnack", "sts", "stCommon.ePrioUnack"),
     Point("CmdResult", "sts", "stCommon.eCmdResult"),
     Point("CmdSeq", "sts", "stCommon.uiCmdSeq"),

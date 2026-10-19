@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 import stlayout as L
-from iolistgen.catalog import DEVICE_TYPES, ST_TYPES, STRUCTS, FieldSpec
+from iolistgen.catalog import DEVICE_TYPES, GVL_CONST, ST_TYPES, STRUCTS, FieldSpec
 from iolistgen.enums import DeviceType
 from iolistgen.fbapi import ENUMS, FB_INTERFACES
 from iolistgen.fbapi import STRUCTS as FB_STRUCTS
@@ -134,6 +134,13 @@ def test_fb_interfaces(objects: dict[str, L.StObject], device_type: DeviceType) 
     expected = {"stCmd": spec.cmd} | ({"stRetain": "ST_DeviceRetain"} if spec.has_retain else {})
     assert in_out == expected
     assert rows("VAR_IN_OUT CONSTANT") == [("stCfg", spec.cfg, "")]
+
+
+def test_constants_match_catalog(objects: dict[str, L.StObject]) -> None:
+    """GVL_Const заглушки — таблица 5.1 каталога: имена по порядку, типы и литералы."""
+    blocks = _blocks(objects["GVL_Const"])
+    rows = [(d.name_list[0], d.type_text, d.init_text) for d in blocks["VAR_GLOBAL CONSTANT"]]
+    assert rows == [(c.name, c.st_type, c.value) for c in GVL_CONST]
 
 
 def test_base_has_time_source(objects: dict[str, L.StObject]) -> None:

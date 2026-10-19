@@ -1,8 +1,9 @@
-"""Каталог библиотеки plc-process-lib v1.0: ФБ, роли сигналов, структуры Cfg, слоты тревог.
+"""Каталог библиотеки plc-process-lib 1.0.0: ФБ, роли сигналов, структуры Cfg, слоты тревог.
 
-Источник — контракт API библиотеки (``API.md``, разделы 4, 11–16, 19, 20). Генератор знает
-о библиотеке только то, что записано здесь: имена ФБ и DUT, входы и выходы, поля Cfg с типами
-и значениями по умолчанию. Изменение контракта библиотеки — изменение этого модуля.
+Источник — выпуск библиотеки 1.0.0 (контракт ``API.md`` 1.0.0, разделы 4, 5.1, 11–17, 19, 20).
+Генератор знает о библиотеке только то, что записано здесь: имена ФБ и DUT, входы и выходы, поля
+Cfg с типами и значениями по умолчанию, константы ``GVL_Const``. Изменение библиотеки — изменение
+этого модуля; сверка с исходниками библиотеки — ``tests_support/check_library.py``.
 """
 
 from __future__ import annotations
@@ -18,13 +19,81 @@ from iolistgen.modbus import ModbusType
 from iolistgen.stvalues import BOOL, REAL, TIME, UDINT, UINT, WORD, StScalar, StType, enum_type
 
 LIBRARY_NAMESPACE = "PL"
-LIBRARY_VERSION = "1.0"
-ALARM_SLOTS = 8
+LIBRARY_TITLE = "plc-process-lib"
+LIBRARY_COMPANY = "plc-portfolio"
+LIBRARY_VERSION = "1.0.0"
+# Версия ссылки в Library Manager CODESYS (Project Information библиотеки): четыре числа
+LIBRARY_REF_VERSION = "1.0.0.0"
 ALARM_ID_STEP = 10
 DEV_NO_MIN = 1
 DEV_NO_MAX = 9999
-AI_LOWCUT_MAX_PCT = 20.0
-STARTS_WINDOW_MAX = 30
+
+
+@dataclass(frozen=True)
+class LibraryConstant:
+    """Константа ``GVL_Const`` библиотеки (таблица 5.1 контракта): имя, тип и литерал ST."""
+
+    name: str
+    st_type: str
+    value: str
+    description: str
+
+
+# Таблица 5.1: константы GVL_Const без масок битов (маски — карты битов устройств, генератору не нужны)
+GVL_CONST: tuple[LibraryConstant, ...] = (
+    LibraryConstant("NE43_FAIL_LOW_MA", "REAL", "3.6", "NE 43: I <= — отказ, мА"),
+    LibraryConstant("NE43_MEAS_LOW_MA", "REAL", "3.8", "NE 43: I < — вне диапазона снизу, мА"),
+    LibraryConstant("NE43_MEAS_HIGH_MA", "REAL", "20.5", "NE 43: I > — вне диапазона сверху, мА"),
+    LibraryConstant("NE43_FAIL_HIGH_MA", "REAL", "21.0", "NE 43: I >= — отказ, мА"),
+    LibraryConstant("MA_ZERO", "REAL", "4.0", "ток нуля шкалы, мА"),
+    LibraryConstant("MA_SPAN", "REAL", "16.0", "диапазон тока, мА"),
+    LibraryConstant("PCT_FULL", "REAL", "100.0", "100 %"),
+    LibraryConstant("REAL_SANE_MAX", "REAL", "1.0E30", "|x| больше — мусор (перепутан порядок слов Modbus)"),
+    LibraryConstant("AI_LOWCUT_MAX_PCT", "REAL", "20.0", "предел rLowCut_pct, %"),
+    LibraryConstant("REAL_EXP_MASK", "DWORD", "16#7F800000", "биты экспоненты REAL (F_IsFinite)"),
+    LibraryConstant("WORD_ALL", "WORD", "16#FFFF", "все биты слова"),
+    LibraryConstant("WORD_LOW_BYTE", "WORD", "16#00FF", "младший байт wStatus"),
+    LibraryConstant("UINT_MAX", "UINT", "65535", "предел счётчиков-секунд в Sts"),
+    LibraryConstant("NS_PER_S", "LREAL", "1.0E9", "нс в секунде"),
+    LibraryConstant("MS_PER_S", "LREAL", "1000.0", "мс в секунде"),
+    LibraryConstant("S_PER_H", "UDINT", "3600", "с в часе"),
+    LibraryConstant("DT_ACCUM_MAX", "LTIME", "LTIME#10S", "больший шаг времени не идёт в счётчики наработки"),
+    LibraryConstant("DEV_ALARMS_MAX", "UINT", "8", "слотов тревог в устройстве"),
+    LibraryConstant("NO_FIRST_OUT", "UINT", "16#FFFF", "первопричины нет (uiFirstOut)"),
+    LibraryConstant("STARTS_WINDOW_MAX", "UINT", "30", "ёмкость окна пусков = максимум uiMaxStartsPerHour"),
+    LibraryConstant("STARTS_WINDOW", "LTIME", "LTIME#1H", "длина окна пусков"),
+    LibraryConstant("PID_DFILTER_N_MIN", "REAL", "2.0", "допустимый rDFilterN, нижняя граница"),
+    LibraryConstant("PID_DFILTER_N_MAX", "REAL", "50.0", "допустимый rDFilterN, верхняя граница"),
+    LibraryConstant("PID_DEADBAND_MAX_PCT", "REAL", "10.0", "предел зоны нечувствительности, %"),
+    LibraryConstant("VLV_UNSEAT_BYPASS", "TIME", "T#2S", "FB_Valve: страгивание с седла без контроля муфты"),
+    LibraryConstant("CV_TIGHT_HYST_PCT", "REAL", "1.0", "FB_ControlValve: гистерезис снятия плотного закрытия, %"),
+    LibraryConstant("VFD_POWER_UP_DELAY", "TIME", "T#10S", "FB_MotorVfd: готовность ПЧ к обмену после питания"),
+    LibraryConstant("AI_ALARM_COUNT", "UINT", "6", "FB_AnalogInput: используемых слотов тревог"),
+    LibraryConstant("DI_ALARM_COUNT", "UINT", "2", "FB_DigitalInput: используемых слотов тревог"),
+    LibraryConstant("MOT_ALARM_COUNT", "UINT", "8", "FB_Motor: слотов тревог (6–7 формирует только FB_MotorVfd)"),
+    LibraryConstant("VLV_ALARM_COUNT", "UINT", "7", "FB_Valve: используемых слотов тревог"),
+    LibraryConstant("CV_ALARM_COUNT", "UINT", "4", "FB_ControlValve: используемых слотов тревог"),
+    LibraryConstant("PID_ALARM_COUNT", "UINT", "1", "FB_PID: используемых слотов тревог"),
+)
+GVL_CONST_BY_NAME: dict[str, LibraryConstant] = {constant.name: constant for constant in GVL_CONST}
+
+
+def _const_float(name: str) -> float:
+    return float(GVL_CONST_BY_NAME[name].value)
+
+
+def _const_int(name: str) -> int:
+    text = GVL_CONST_BY_NAME[name].value
+    return int(text[3:], 16) if text.startswith("16#") else int(text)
+
+
+ALARM_SLOTS = _const_int("DEV_ALARMS_MAX")
+AI_LOWCUT_MAX_PCT = _const_float("AI_LOWCUT_MAX_PCT")
+STARTS_WINDOW_MAX = _const_int("STARTS_WINDOW_MAX")
+PCT_FULL = _const_float("PCT_FULL")
+PID_DFILTER_N_MIN = _const_float("PID_DFILTER_N_MIN")
+PID_DFILTER_N_MAX = _const_float("PID_DFILTER_N_MAX")
+PID_DEADBAND_MAX_PCT = _const_float("PID_DEADBAND_MAX_PCT")
 
 E_AI_INPUT_TYPE = enum_type("E_AiInputType", [("MilliAmp", 0), ("Norm420", 1), ("Norm01", 2), ("Eng", 3), ("Raw", 4)])
 E_AI_FAIL_VALUE = enum_type("E_AiFailValue", [("HoldLast", 0), ("Substitute", 1)])

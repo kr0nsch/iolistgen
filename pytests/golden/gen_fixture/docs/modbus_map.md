@@ -65,10 +65,10 @@ n блока — байты 2n…2n+1 структуры, 32-битные пол
 | 7 | 1 | UINT | `stCommon.uiCmdSeq` | счётчик обработанных команд (по кругу) |  |
 | 8 | 1 | WORD | `stCommon.wAlmActive` | бит i: условие тревоги слота i активно |  |
 | 9 | 1 | WORD | `stCommon.wAlmUnack` | бит i: тревога слота i не квитирована |  |
-| 10 | 1 | WORD | `stCommon.wAlmShelved` | бит i: слот отложен, подавлен или выведен из работы |  |
+| 10 | 1 | WORD | `stCommon.wAlmShelved` | бит i: слот отложен оператором (Shelved) |  |
 | 11 | 1 | INT | `stCommon.ePrioUnack` | наивысший приоритет неквитированных тревог |  |
 | 12 | 1 | INT | `stCommon.eDevType` | тип устройства (проверка адресации блока) |  |
-| 13 | 1 | WORD | `stCommon.wReserve` | резерв: размер кратен 4 байтам |  |
+| 13 | 1 | WORD | `stCommon.wAlmSuppressed` | бит i: слот подавлен логикой (SuppressedByDesign) |  |
 | 14 | 2 | REAL | `rValue_eu` | итоговое значение |  |
 | 16 | 2 | REAL | `rValue_pct` | значение, % шкалы | % |
 | 18 | 2 | REAL | `rIn` | сырое значение входа |  |
@@ -89,10 +89,10 @@ n блока — байты 2n…2n+1 структуры, 32-битные пол
 | 7 | 1 | UINT | `stCommon.uiCmdSeq` | счётчик обработанных команд (по кругу) |  |
 | 8 | 1 | WORD | `stCommon.wAlmActive` | бит i: условие тревоги слота i активно |  |
 | 9 | 1 | WORD | `stCommon.wAlmUnack` | бит i: тревога слота i не квитирована |  |
-| 10 | 1 | WORD | `stCommon.wAlmShelved` | бит i: слот отложен, подавлен или выведен из работы |  |
+| 10 | 1 | WORD | `stCommon.wAlmShelved` | бит i: слот отложен оператором (Shelved) |  |
 | 11 | 1 | INT | `stCommon.ePrioUnack` | наивысший приоритет неквитированных тревог |  |
 | 12 | 1 | INT | `stCommon.eDevType` | тип устройства (проверка адресации блока) |  |
-| 13 | 1 | WORD | `stCommon.wReserve` | резерв: размер кратен 4 байтам |  |
+| 13 | 1 | WORD | `stCommon.wAlmSuppressed` | бит i: слот подавлен логикой (SuppressedByDesign) |  |
 | 14 | 1 | UINT | `uiSubstRemain_s` | до автоматического снятия подмены | с |
 
 ### `ST_MotorSts` — 34 регистров (Motor, MotorVfd)
@@ -109,10 +109,10 @@ n блока — байты 2n…2n+1 структуры, 32-битные пол
 | 7 | 1 | UINT | `stCommon.uiCmdSeq` | счётчик обработанных команд (по кругу) |  |
 | 8 | 1 | WORD | `stCommon.wAlmActive` | бит i: условие тревоги слота i активно |  |
 | 9 | 1 | WORD | `stCommon.wAlmUnack` | бит i: тревога слота i не квитирована |  |
-| 10 | 1 | WORD | `stCommon.wAlmShelved` | бит i: слот отложен, подавлен или выведен из работы |  |
+| 10 | 1 | WORD | `stCommon.wAlmShelved` | бит i: слот отложен оператором (Shelved) |  |
 | 11 | 1 | INT | `stCommon.ePrioUnack` | наивысший приоритет неквитированных тревог |  |
 | 12 | 1 | INT | `stCommon.eDevType` | тип устройства (проверка адресации блока) |  |
-| 13 | 1 | WORD | `stCommon.wReserve` | резерв: размер кратен 4 байтам |  |
+| 13 | 1 | WORD | `stCommon.wAlmSuppressed` | бит i: слот подавлен логикой (SuppressedByDesign) |  |
 | 14 | 1 | INT | `eState` | состояние: 0 стоп, 1 пуск, 2 работа, 3 останов, 4 отказ |  |
 | 15 | 1 | WORD | `wInterlock` | действующие блокировки |  |
 | 16 | 1 | WORD | `wPermitMissing` | недостающие разрешения |  |
@@ -141,10 +141,10 @@ n блока — байты 2n…2n+1 структуры, 32-битные пол
 | 7 | 1 | UINT | `stCommon.uiCmdSeq` | счётчик обработанных команд (по кругу) |  |
 | 8 | 1 | WORD | `stCommon.wAlmActive` | бит i: условие тревоги слота i активно |  |
 | 9 | 1 | WORD | `stCommon.wAlmUnack` | бит i: тревога слота i не квитирована |  |
-| 10 | 1 | WORD | `stCommon.wAlmShelved` | бит i: слот отложен, подавлен или выведен из работы |  |
+| 10 | 1 | WORD | `stCommon.wAlmShelved` | бит i: слот отложен оператором (Shelved) |  |
 | 11 | 1 | INT | `stCommon.ePrioUnack` | наивысший приоритет неквитированных тревог |  |
 | 12 | 1 | INT | `stCommon.eDevType` | тип устройства (проверка адресации блока) |  |
-| 13 | 1 | WORD | `stCommon.wReserve` | резерв: размер кратен 4 байтам |  |
+| 13 | 1 | WORD | `stCommon.wAlmSuppressed` | бит i: слот подавлен логикой (SuppressedByDesign) |  |
 | 14 | 1 | INT | `eState` | состояние: 1 закрыта, 2 открывается, 3 открыта, 4 закрывается, 7 отказ |  |
 | 15 | 1 | WORD | `wInterlock` | действующие блокировки |  |
 | 16 | 1 | WORD | `wPermitMissing` | недостающие разрешения для текущего направления |  |
@@ -169,10 +169,10 @@ n блока — байты 2n…2n+1 структуры, 32-битные пол
 | 7 | 1 | UINT | `stCommon.uiCmdSeq` | счётчик обработанных команд (по кругу) |  |
 | 8 | 1 | WORD | `stCommon.wAlmActive` | бит i: условие тревоги слота i активно |  |
 | 9 | 1 | WORD | `stCommon.wAlmUnack` | бит i: тревога слота i не квитирована |  |
-| 10 | 1 | WORD | `stCommon.wAlmShelved` | бит i: слот отложен, подавлен или выведен из работы |  |
+| 10 | 1 | WORD | `stCommon.wAlmShelved` | бит i: слот отложен оператором (Shelved) |  |
 | 11 | 1 | INT | `stCommon.ePrioUnack` | наивысший приоритет неквитированных тревог |  |
 | 12 | 1 | INT | `stCommon.eDevType` | тип устройства (проверка адресации блока) |  |
-| 13 | 1 | WORD | `stCommon.wReserve` | резерв: размер кратен 4 байтам |  |
+| 13 | 1 | WORD | `stCommon.wAlmSuppressed` | бит i: слот подавлен логикой (SuppressedByDesign) |  |
 | 14 | 2 | REAL | `rPosSp_pct` | задание после пределов, до рампы | % |
 | 16 | 2 | REAL | `rOut_pct` | выход | % |
 | 18 | 2 | REAL | `rOut_mA` | выход на AO | мА |

@@ -101,6 +101,21 @@
         "default": null
       }
     },
+    "plc-process-lib": {
+      "label": "plc-process-lib 1.0.0.0 (библиотека устройств, проект 01): типы и ФБ сгенерированного кода",
+      "namespace": "PL",
+      "title_contains": "plc-process-lib",
+      "company": "plc-portfolio",
+      "version": "1.0.0.0",
+      "build_from_repo": {
+        "env": "PL_REPO",
+        "default": "../plc-process-lib"
+      },
+      "install_from": {
+        "env": "PL_LIBRARY",
+        "default": null
+      }
+    },
     "_doc": [
       "Библиотеки-зависимости; режимы (modes.*.libraries) и library.libraries ссылаются на них по ключу.",
       "Какая библиотека: title (точно), title_contains (подстрока), company (точно); без них — по namespace.",
@@ -224,7 +239,8 @@
       "PRG_Main"
     ],
     "libraries": [
-      "standard"
+      "standard",
+      "plc-process-lib"
     ],
     "path": {
       "env": "CDS_LIBRARY",

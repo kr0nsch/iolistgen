@@ -86,3 +86,19 @@ def test_motor_vfd_inherits_motor_pins() -> None:
     assert "xCommOk" in names and "rSpeedAct_pct" in names
     outputs = [item.name for item in fb_outputs(DeviceType.MOTOR_VFD)]
     assert "xQRun" in outputs and "rSpeedRef_pct" in outputs
+
+
+def test_common_sts_register_13_is_alarm_suppressed_mask() -> None:
+    """1.0.0: бывший резерв — маска слотов, подавленных логикой (CONSUMERS G1); раскладка та же."""
+    fields = {field.path: field for field in flat_fields("ST_DeviceSts")}
+    assert fields["wAlmSuppressed"].offset == 26 and fields["wAlmSuppressed"].register == 13
+    assert fields["wAlmShelved"].register == 10
+    assert "wReserve" not in fields
+    assert "Shelved" in fields["wAlmShelved"].field.description
+    assert "SuppressedByDesign" in fields["wAlmSuppressed"].field.description
+
+
+def test_alarm_event_reason_has_disabled() -> None:
+    """1.0.0: закрывающее событие выключенной тревоги (CONSUMERS G2)."""
+    assert dict(ENUMS["E_AlarmEventReason"])["Disabled"] == 11
+    assert [value for _, value in ENUMS["E_AlarmEventReason"]] == list(range(12))
