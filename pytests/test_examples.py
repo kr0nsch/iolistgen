@@ -78,9 +78,33 @@ def test_kns_list_is_clean() -> None:
     result = _check(KNS_CSV)
     assert [item.render() for item in result.diagnostics] == []
     stats = result.stats
-    assert (stats.signals, stats.devices, stats.modbus) == (58, 29, 19)
+    assert (stats.signals, stats.devices, stats.modbus) == (58, 30, 19)
     assert stats.by_signal_type == {"AI": 5, "DI": 27, "DO": 7, "MB": 19}
-    assert stats.by_device_type == {"AnalogInput": 9, "DigitalInput": 16, "Motor": 1, "MotorVfd": 3}
+    assert stats.by_device_type == {"AnalogInput": 9, "DigitalInput": 16, "Motor": 1, "MotorVfd": 3, "Pid": 1}
+
+
+def test_kns_level_controller_and_application_data(tmp_path: Path) -> None:
+    """Регулятор уровня LIC101 (Pid) и данные приложения examples/kns/persist_extra.txt (iolistgen.toml рядом)."""
+    from iolistgen.config import resolve_config
+    from iolistgen.generators import GeneratorContext, resolve_options
+    from iolistgen.generators.st_codesys import StCodesysGenerator
+
+    model = _model(KNS_CSV)
+    loop = model.device("LIC101")
+    assert loop.device_type is DeviceType.PID and loop.signals == ()
+    assert loop.cfg.value("eAction") == "Direct" and loop.cfg.value("xUseOutAct") is True
+    assert (loop.cfg.value("rPvMin_eu"), loop.cfg.value("rPvMax_eu")) == (0.0, 5.0)
+    assert loop.cfg.value("astAlarm[0].ePriority") == "None"  # дублирует LT101.FAIL (рационализация тревог)
+    config = resolve_config(None, KNS_CSV)
+    generator = StCodesysGenerator()
+    options = resolve_options(
+        generator, config.generators.get(generator.name), config_dir=Path(str(config.path)).parent
+    )
+    assert Path(str(options["persist_extra"])) == EXAMPLES / "kns" / "persist_extra.txt"
+    ctx = GeneratorContext(generator.name, tmp_path, options, config, model.source, "test")
+    generator.generate(model, tmp_path, ctx)
+    persist = (tmp_path / "src/GVLs/Generated/GVL_Persist.pvl.st").read_text(encoding="utf-8")
+    assert persist.index("stHS502Cfg") < persist.index("rLIC101SpOper_m : REAL := 2.0;")
 
 
 def test_kns_pumps_follow_station_conventions() -> None:
@@ -285,7 +309,7 @@ def test_benchmark_writes_report_and_readme_block(tmp_path: Path) -> None:
     assert benchmark.main([*args, "--out", str(out), "--readme", str(readme)]) == 0
     text = out.read_text(encoding="utf-8")
     assert "# Замер времени iolistgen" in text
-    assert "`examples/kns/io_list.csv` | 58 | 29 |" in text
+    assert "`examples/kns/io_list.csv` | 58 | 30 |" in text
     assert "проверка + генерация" in text
     assert "процесс целиком" not in text  # --cli-repeat 0: без запусков отдельного процесса
     block = readme.read_text(encoding="utf-8")

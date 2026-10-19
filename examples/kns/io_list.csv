@@ -2,6 +2,7 @@ tag;description;signal_type;device;device_type;dev_no;role;dev_desc;range_min;ra
 LT101;Уровень в приёмном резервуаре;AI;;AnalogInput;101;PV;;0;5;м;4;3,5;0,8;0,5;3;;High;Резервуар;A1;1;;;;;;;;;;"tFilter=T#2S; astLimit[HH].rHyst_eu=0.05; astLimit[H].rHyst_eu=0.05; astLimit[L].rHyst_eu=0.05; astLimit[LL].rHyst_eu=0.05"
 LS102;Поплавок «аварийно высокий уровень» (H, 4,2 м);DI;;DigitalInput;102;IN;;;;;;;;;2;;High;Резервуар;D1;1;;;;;;;;;;xInvert=TRUE
 LS103;Поплавок «сухой ход» (L, 0,4 м);DI;;DigitalInput;103;IN;;;;;;;;;1;;High;Резервуар;D1;2;;;;;;;;;;"xInvert=TRUE; eFailValue=ForceTrue"
+LIC101;Регулятор уровня в приёмном резервуаре: частота ведущего насоса;;;Pid;104;;;0;5;м;;;;;;;None;Резервуар;;;;;;;;;;;;"eAction=Direct; xUseOutAct=TRUE; rKp=2.0; rTi_s=300.0; rSpMin_eu=1.0; rSpMax_eu=3.5"
 PT201;Давление в напорном коллекторе;AI;;AnalogInput;201;PV;;0;10;бар;5;4;1;0,5;5;;High;Коллектор;A1;2;;;;;;;;;;"tFilter=T#1S; astLimit[L].rHyst_eu=0.1; astLimit[LL].rHyst_eu=0.1"
 FT202;Расход в напорном коллекторе;AI;;AnalogInput;202;PV;;0;500;м³/ч;;;30;;30;;;Коллектор;A1;3;;;;;;;;;;"tFilter=T#3S; rLowCut_pct=1.0; astLimit[L].rHyst_eu=5.0; astAlarm[L].ePriority=Medium"
 LS203;Затопление камеры задвижек;DI;;DigitalInput;203;IN;;;;;;;;;5;;Medium;Коллектор;D1;3;;;;;;;;;;

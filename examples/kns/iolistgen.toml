@@ -1,0 +1,6 @@
+# Настройки iolistgen для примера КНС-1 (docs/CLI.md, docs/GENERATORS.md).
+# Относительные пути — от каталога этого файла.
+
+[generators.st-codesys]
+# данные приложения в GVL_Persist после устройств: задание оператора ПИД, уставки станции
+persist_extra = "persist_extra.txt"
