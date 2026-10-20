@@ -6,7 +6,7 @@
   </picture>
 </p>
 
-<p align="center"><b>Перечень сигналов в Excel или CSV → проверенный слой устройств проекта CODESYS V3.5: GVL, вызовы ФБ, карты Modbus, теги SCADA, список тревог</b></p>
+<p align="center"><b>Перечень сигналов в Excel или CSV → проверенный слой устройств проекта для ОВЕН ПЛК210 и REGUL (CODESYS V3.5, Astra.IDE): GVL, вызовы ФБ, карты Modbus, теги SCADA, список тревог</b></p>
 
 <p align="center">
   <a href="https://github.com/kr0nsch/iolistgen/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/kr0nsch/iolistgen/actions/workflows/ci.yml/badge.svg?branch=main"></a>
@@ -28,12 +28,16 @@
   <a href="#summary-en">Summary (EN)</a>
 </p>
 
-**Генератор слоя устройств проекта CODESYS V3.5 по перечню сигналов (IO list) в Excel или CSV.**
+**Генератор слоя устройств проекта для ОВЕН ПЛК210/СПК210 (CODESYS V3.5 SP17) и REGUL R500 (Astra.IDE) по
+перечню сигналов (IO list) в Excel или CSV.**
 Обычно перечень ведут в Excel, а переменные ввода-вывода, экземпляры функциональных блоков, карту
 Modbus и базу тегов SCADA заводят по нему вручную — отсюда дубли тегов, перепутанные шкалы,
 пересекающиеся адреса и расхождения ПЛК со SCADA, которые всплывают на пусконаладке. `iolistgen`
 проверяет перечень (у каждой ошибки — строка, колонка и как исправить) и одной командой строит по
-нему код ST, карты обмена, импорт SCADA и список тревог. Для инженеров АСУ ТП и интеграторов на CODESYS.
+нему код ST, карты обмена, импорт SCADA и список тревог. Своего генератора «перечень → проект» у REGUL нет —
+интеграторы пишут свои; у ОВЕН карты регистров модулей есть только в руководствах по эксплуатации, машиночитаемых
+файлов нет. Для инженеров АСУ ТП и
+интеграторов на ОВЕН и REGUL.
 
 ## Что это и зачем
 
@@ -75,15 +79,20 @@ Modbus и базу тегов SCADA заводят по нему вручную 
 
 **Для кого**
 
-- инженеры АСУ ТП и интеграторы на CODESYS V3.5, у которых перечень сигналов ведётся в Excel, а
-  GVL, экземпляры и вызовы ФБ, карты Modbus и база SCADA заводятся по нему вручную;
+- инженеры АСУ ТП и интеграторы на ОВЕН ПЛК210/СПК210 (CODESYS V3.5 SP17 Patch 3) и REGUL (Astra.IDE), у
+  которых перечень сигналов ведётся в Excel, а GVL, экземпляры и вызовы ФБ, карты Modbus и база SCADA заводятся по
+  нему вручную;
 - группы, которые ведут код ПЛК в git по [plc-repo-template](https://github.com/kr0nsch/plc-repo-template):
   сгенерированный код ложится в его раскладку `src/` и собирается его скриптом `cds.py`;
 - технические руководители, которые оценивают подход «перечень сигналов — источник истины».
 
 **Платформа.** Python 3.10+, Windows и Linux; для проверки и генерации CODESYS не нужен.
 Сгенерированный код — для CODESYS V3.5 (проверено на 3.5.17.30) и plc-process-lib 1.0.0
-(пространство имён `PL`); целевой ПЛК — ОВЕН ПЛК210, на контроллере код не запускался.
+(пространство имён `PL`). Перечень того же формата во флагмане
+[kns-pump-station](https://github.com/kr0nsch/kns-pump-station) строит и дерево устройств ОВЕН ПЛК210-14 —
+встроенный ввод-вывод, модули МВ210 по Modbus TCP, ПЧ по Modbus RTU (`targets/plc210`, сборка без ошибок);
+сгенерированный код того же примера собирается на REGUL R500 в Astra.IDE (перенос — в
+[kns-port-domestic](https://github.com/kr0nsch/kns-port-domestic)). На контроллере код не запускался.
 
 <details>
 <summary>Термины: перечень сигналов, ФБ, GVL, Persistent Variables, Retain, Cfg, роль, dev_no, AUX</summary>
@@ -236,10 +245,10 @@ python -m mypy
 python -m pytest
 ```
 
-Увидите: ruff и mypy без замечаний, `1452 passed, 31 skipped` примерно за полминуты. Пропущены
+Увидите: ruff и mypy без замечаний, `1454 passed, 31 skipped` примерно за полминуты. Пропущены
 интеграционные тесты, которым нужны RuSTy и iec_checker (19), и сверка каталога с исходниками
 plc-process-lib (12; нужен клон `../plc-process-lib` или переменная `PL_REPO`). Со всеми тремя —
-`1483 passed`. Где взять RuSTy и iec_checker — [tools/README.md](tools/README.md#checkrun_rustypy--проверка-rusty).
+`1485 passed`. Где взять RuSTy и iec_checker — [tools/README.md](tools/README.md#checkrun_rustypy--проверка-rusty).
 
 На Windows без включённых длинных путей клонируйте в короткий каталог, например `C:\src\`: при пути
 к клону около 155 символов `pip` не смог распаковать в `.venv` пакет lxml из `requirements-dev.txt`.
@@ -618,7 +627,7 @@ iec_checker v0.4); необязательные задания — RuSTy и iec_
 ## Summary (EN)
 
 `iolistgen` turns a process-control IO list (Excel or CSV) into the device layer of a CODESYS V3.5
-project. It validates the list with 74 rules — tags, scales and limits, device composition, Modbus
+project for OWEN PLC210/SPK210 (CODESYS V3.5 SP17) or REGUL R500 (Astra.IDE). It validates the list with 74 rules — tags, scales and limits, device composition, Modbus
 address overlaps, function-block settings the library would reject — and reports file, row, column
 and a fix. It then generates Structured Text for the plc-process-lib 1.0.0 device library (GVLs,
 function-block instances and calls with all bindings, persistent settings), Modbus master and slave
@@ -633,9 +642,9 @@ has run on PLC hardware. Python 3.10+. Docs are in Russian; start with `docs/USA
 
 ---
 
-<p align="center"><b>Портфолио АСУ ТП</b></p>
+<p align="center"><b>Портфолио АСУ ТП</b> · <sub>инструменты и практики для ПЛК ОВЕН и REGUL</sub></p>
 <table>
-<tr><td width="33%"><a href="https://github.com/kr0nsch/plc-repo-template">01 · plc-repo-template</a><br><sub>ST в git, сборка проекта скриптом, CI</sub></td><td width="33%"><a href="https://github.com/kr0nsch/plc-process-lib">02 · plc-process-lib</a><br><sub>ФБ: AI, двигатель, ПЧ, задвижка, ПИД, тревоги</sub></td><td width="33%"><a href="https://github.com/kr0nsch/kns-pump-station">03 · kns-pump-station</a><br><sub>флагман: КНС, три насоса с ПЧ, модель, ПМИ</sub></td></tr>
-<tr><td width="33%"><a href="https://github.com/kr0nsch/kns-port-domestic">04 · kns-port-domestic</a><br><sub>перенос на Astra.IDE / MasterSCADA 4D</sub></td><td width="33%"><a href="https://github.com/kr0nsch/plc-iiot-stack">05 · plc-iiot-stack</a><br><sub>OPC UA / MQTT → InfluxDB → Grafana</sub></td><td width="33%"><a href="https://github.com/kr0nsch/iolistgen"><b>06 · iolistgen</b></a><br><sub>перечень сигналов → ST, карты Modbus, SCADA</sub></td></tr>
+<tr><td width="33%"><a href="https://github.com/kr0nsch/plc-repo-template">01 · plc-repo-template</a><br><sub>ST в git, сборка для ПЛК210 и R500, CI</sub></td><td width="33%"><a href="https://github.com/kr0nsch/plc-process-lib">02 · plc-process-lib</a><br><sub>ФБ: AI, двигатель, ПЧ, задвижка, ПИД, тревоги</sub></td><td width="33%"><a href="https://github.com/kr0nsch/kns-pump-station">03 · kns-pump-station</a><br><sub>флагман: КНС, ПМИ на модели, сборка ПЛК210</sub></td></tr>
+<tr><td width="33%"><a href="https://github.com/kr0nsch/kns-port-domestic">04 · kns-port-domestic</a><br><sub>перенос КНС на REGUL R500 (Astra.IDE)</sub></td><td width="33%"><a href="https://github.com/kr0nsch/plc-iiot-stack">05 · plc-iiot-stack</a><br><sub>OPC UA / MQTT → InfluxDB → Grafana</sub></td><td width="33%"><a href="https://github.com/kr0nsch/iolistgen"><b>06 · iolistgen</b></a><br><sub>перечень сигналов → ST, карты Modbus, SCADA</sub></td></tr>
 <tr><td width="33%"><a href="https://github.com/kr0nsch/plc-ci-toolkit">07 · plc-ci-toolkit</a><br><sub>линтеры, сборка CODESYS, тесты, JUnit</sub></td><td width="33%"><a href="https://github.com/kr0nsch/s7-to-codesys">08 · s7-to-codesys</a><br><sub>конвертер SCL → ST с отчётом о переносе</sub></td><td width="33%"><a href="https://github.com/kr0nsch/sis-interlock-demo">09 · sis-interlock-demo</a><br><sub>ПАЗ: MooN, матрица причин и следствий</sub></td></tr>
 </table>
